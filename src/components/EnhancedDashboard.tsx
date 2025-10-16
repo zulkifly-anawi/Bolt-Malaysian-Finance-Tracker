@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle } from 'lucide-react';
+import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle, HelpCircle } from 'lucide-react';
 import { formatCurrency, formatDate, calculateProgress, isGoalOnTrack } from '../utils/formatters';
 import { ASBCalculator } from './investments/ASBCalculator';
 import { TabungHajiTracker } from './investments/TabungHajiTracker';
@@ -15,6 +15,10 @@ import { NotificationsPanel } from './engagement/NotificationsPanel';
 import { InsightsTips } from './engagement/InsightsTips';
 import { ExportData } from './engagement/ExportData';
 import { ConfirmDialog } from './ConfirmDialog';
+import { OnboardingTour } from './help/OnboardingTour';
+import { HelpCenter } from './help/HelpCenter';
+import { FloatingHelpButton } from './help/FloatingHelpButton';
+import { HelpTooltip } from './help/HelpTooltip';
 import type { Goal, Account, Achievement } from '../types/database';
 
 export const EnhancedDashboard = () => {
@@ -31,10 +35,27 @@ export const EnhancedDashboard = () => {
   const [goalFormInitialData, setGoalFormInitialData] = useState<Partial<Goal> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'account' | 'goal', id: string, name: string } | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true);
 
   useEffect(() => {
     loadData();
+    checkOnboarding();
   }, [user]);
+
+  const checkOnboarding = async () => {
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('onboarding_completed')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const completed = data?.onboarding_completed ?? false;
+    setOnboardingCompleted(completed);
+    setShowOnboarding(!completed);
+  };
 
   const deleteAccount = async (accountId: string) => {
     const account = accounts.find(a => a.id === accountId);
@@ -164,6 +185,7 @@ export const EnhancedDashboard = () => {
             { id: 'achievements', label: 'Achievements', icon: Trophy },
             { id: 'tips', label: 'Tips', icon: Lightbulb },
             { id: 'export', label: 'Export', icon: Download },
+            { id: 'help', label: 'Help', icon: HelpCircle },
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -427,6 +449,10 @@ export const EnhancedDashboard = () => {
                     <h2 className="text-2xl font-bold text-white drop-shadow-lg">Investment Insights</h2>
                     <p className="text-sm text-white text-opacity-80">Malaysian-specific calculations and projections</p>
                   </div>
+                  <HelpTooltip
+                    title="Investment Insights"
+                    content="Track your ASB, EPF, and Tabung Haji accounts with Malaysian-specific calculators. Get projections based on historical dividend rates and your contribution patterns."
+                  />
                 </div>
 
                 {asbAccounts.map(account => (
@@ -466,7 +492,20 @@ export const EnhancedDashboard = () => {
             {activeTab === 'export' && (
               <ExportData user={user} netWorth={totalNetWorth} goals={goals} accounts={accounts} achievements={achievements} />
             )}
+
+            {activeTab === 'help' && (
+              <HelpCenter />
+            )}
           </>
+        )}
+
+        <FloatingHelpButton
+          activeTab={activeTab}
+          onOpenHelp={() => setActiveTab('help')}
+        />
+
+        {showOnboarding && (
+          <OnboardingTour onComplete={() => setShowOnboarding(false)} />
         )}
 
         {showGoalForm && (
