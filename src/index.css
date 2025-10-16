@@ -183,3 +183,55 @@
     animation: none;
   }
 }
+
+/* Print styles - optimize dashboard for printing if needed */
+@media print {
+  /* Remove gradient backgrounds and use white background for better printing */
+  body,
+  .gradient-mesh {
+    background: white !important;
+    color: #000 !important;
+  }
+
+  /* Hide navigation and interactive elements */
+  nav,
+  button,
+  .glass-button,
+  [role="button"] {
+    display: none !important;
+  }
+
+  /* Simplify glass effects for print */
+  .glass,
+  .glass-strong,
+  .glass-card {
+    background: white !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+  }
+
+  /* Ensure text is dark and readable */
+  .text-white {
+    color: #1f2937 !important;
+  }
+
+  /* Remove animations and effects */
+  .liquid-shine::before,
+  .glow,
+  .shimmer {
+    display: none !important;
+  }
+
+  /* Optimize page breaks */
+  .glass-card,
+  .glass-strong {
+    page-break-inside: avoid;
+  }
+
+  /* Show all content without scrolling */
+  * {
+    overflow: visible !important;
+  }
+}

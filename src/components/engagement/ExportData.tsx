@@ -1,5 +1,5 @@
 import { Download, FileText, FileSpreadsheet, Printer } from 'lucide-react';
-import { exportGoalsToCSV, exportAccountsToCSV, downloadFinancialReport } from '../../utils/exportData';
+import { exportGoalsToCSV, exportAccountsToCSV, downloadFinancialReport, generateFinancialReportHTML } from '../../utils/exportData';
 
 interface ExportDataProps {
   user: any;
@@ -10,8 +10,29 @@ interface ExportDataProps {
 }
 
 export const ExportData = ({ user, netWorth, goals, accounts, achievements }: ExportDataProps) => {
+  // Generate formatted financial report and open in print-optimized window
   const handlePrint = () => {
-    window.print();
+    // Generate the HTML report with all dashboard data
+    const reportHTML = generateFinancialReportHTML(user, netWorth, goals, accounts, achievements);
+
+    // Open report in a new window optimized for printing
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+
+    if (printWindow) {
+      printWindow.document.write(reportHTML);
+      printWindow.document.close();
+
+      // Wait for content to load, then trigger print dialog
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+
+        // Close window after printing or if user cancels
+        printWindow.onafterprint = () => {
+          printWindow.close();
+        };
+      };
+    }
   };
 
   return (
@@ -97,7 +118,7 @@ export const ExportData = ({ user, netWorth, goals, accounts, achievements }: Ex
                 Print Dashboard
               </h3>
               <p className="text-sm text-white text-opacity-70">
-                Print a copy of your current dashboard view
+                Generate and print a formatted financial report
               </p>
             </div>
           </div>
@@ -128,19 +149,6 @@ export const ExportData = ({ user, netWorth, goals, accounts, achievements }: Ex
         </div>
       </div>
 
-      <div className="glass-card rounded-3xl p-6 border-2 border-yellow-400 border-opacity-30 liquid-shine">
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
-            <FileText className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="font-bold text-white mb-2">Coming Soon: Share with Family</h3>
-            <p className="text-sm text-white text-opacity-80">
-              Premium feature: Share your financial progress with family members, set up joint goals, and collaborate on family finances.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
