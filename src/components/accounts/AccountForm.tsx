@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Wallet, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency } from '../../utils/formatters';
 import { validateAccountData } from '../../utils/validation';
+import type { Account } from '../../types/database';
 
 interface AccountFormProps {
   onClose: () => void;
   onSuccess: () => void;
+  editData?: Account;
 }
 
 const ACCOUNT_TYPES = [
@@ -36,20 +38,30 @@ const INSTITUTIONS = [
   'Other',
 ];
 
-export const AccountForm = ({ onClose, onSuccess }: AccountFormProps) => {
+export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const isEditMode = !!editData;
+
   const [formData, setFormData] = useState({
-    name: '',
-    accountType: 'ASB',
-    institution: '',
-    currentBalance: 0,
-    monthlyContribution: 0,
-    unitsHeld: 0,
-    dividendRate: 0,
+    name: editData?.name || '',
+    accountType: editData?.account_type || 'ASB',
+    institution: editData?.institution || '',
+    currentBalance: editData?.current_balance || 0,
+    monthlyContribution: editData?.monthly_contribution || 0,
+    unitsHeld: editData?.units_held || 0,
+    dividendRate: editData?.dividend_rate || 0,
   });
+
+  const [balanceChanged, setBalanceChanged] = useState(false);
+
+  useEffect(() => {
+    if (isEditMode && editData) {
+      setBalanceChanged(formData.currentBalance !== editData.current_balance);
+    }
+  }, [formData.currentBalance, editData, isEditMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,41 +86,75 @@ export const AccountForm = ({ onClose, onSuccess }: AccountFormProps) => {
     }
 
     try {
-      const { data: insertedAccount, error: insertError } = await supabase
-        .from('accounts')
-        .insert({
-          user_id: user.id,
-          name: formData.name,
-          account_type: formData.accountType,
-          institution: formData.institution || null,
-          current_balance: formData.currentBalance,
-          monthly_contribution: formData.monthlyContribution || 0,
-          units_held: formData.unitsHeld || 0,
-          dividend_rate: formData.dividendRate || 0,
-        })
-        .select()
-        .single();
+      if (isEditMode && editData) {
+        const { error: updateError } = await supabase
+          .from('accounts')
+          .update({
+            name: formData.name,
+            account_type: formData.accountType,
+            institution: formData.institution || null,
+            current_balance: formData.currentBalance,
+            monthly_contribution: formData.monthlyContribution || 0,
+            units_held: formData.unitsHeld || 0,
+            dividend_rate: formData.dividendRate || 0,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editData.id)
+          .eq('user_id', user.id);
 
-      if (insertError) throw insertError;
-      if (!insertedAccount) throw new Error('Failed to create account');
+        if (updateError) throw updateError;
 
-      const { error: balanceError } = await supabase
-        .from('balance_entries')
-        .insert({
-          account_id: insertedAccount.id,
-          balance: formData.currentBalance,
-          entry_date: new Date().toISOString().split('T')[0],
-          notes: 'Initial balance',
-        });
+        if (balanceChanged) {
+          const { error: balanceError } = await supabase
+            .from('balance_entries')
+            .insert({
+              account_id: editData.id,
+              balance: formData.currentBalance,
+              entry_date: new Date().toISOString().split('T')[0],
+              notes: 'Balance updated',
+            });
 
-      if (balanceError) {
-        console.error('Failed to create initial balance entry:', balanceError);
+          if (balanceError) {
+            console.error('Failed to create balance entry:', balanceError);
+          }
+        }
+      } else {
+        const { data: insertedAccount, error: insertError } = await supabase
+          .from('accounts')
+          .insert({
+            user_id: user.id,
+            name: formData.name,
+            account_type: formData.accountType,
+            institution: formData.institution || null,
+            current_balance: formData.currentBalance,
+            monthly_contribution: formData.monthlyContribution || 0,
+            units_held: formData.unitsHeld || 0,
+            dividend_rate: formData.dividendRate || 0,
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        if (!insertedAccount) throw new Error('Failed to create account');
+
+        const { error: balanceError } = await supabase
+          .from('balance_entries')
+          .insert({
+            account_id: insertedAccount.id,
+            balance: formData.currentBalance,
+            entry_date: new Date().toISOString().split('T')[0],
+            notes: 'Initial balance',
+          });
+
+        if (balanceError) {
+          console.error('Failed to create initial balance entry:', balanceError);
+        }
       }
 
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to create account. Please try again.');
+      setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} account. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -127,8 +173,8 @@ export const AccountForm = ({ onClose, onSuccess }: AccountFormProps) => {
                 <Wallet className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">Add Investment Account</h2>
-                <p className="text-sm text-white text-opacity-80">Track your Malaysian investments</p>
+                <h2 className="text-2xl font-bold text-white">{isEditMode ? 'Edit Account' : 'Add Investment Account'}</h2>
+                <p className="text-sm text-white text-opacity-80">{isEditMode ? 'Update account details' : 'Track your Malaysian investments'}</p>
               </div>
             </div>
             <button onClick={onClose} className="text-white text-opacity-80 hover:text-opacity-100 transition-all">
@@ -142,6 +188,14 @@ export const AccountForm = ({ onClose, onSuccess }: AccountFormProps) => {
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <p>{error}</p>
               </div>
+            </div>
+          )}
+
+          {isEditMode && balanceChanged && (
+            <div className="glass rounded-2xl p-4 mb-4 border border-yellow-500 border-opacity-30">
+              <p className="text-sm text-yellow-200">
+                Balance will be updated and a new history entry will be created
+              </p>
             </div>
           )}
 
@@ -294,7 +348,7 @@ export const AccountForm = ({ onClose, onSuccess }: AccountFormProps) => {
                 disabled={loading}
                 className="flex-1 px-4 py-3 glass-button text-white rounded-xl font-semibold disabled:opacity-50 transition-all"
               >
-                {loading ? 'Adding...' : 'Add Account'}
+                {loading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update Account' : 'Add Account')}
               </button>
             </div>
           </form>

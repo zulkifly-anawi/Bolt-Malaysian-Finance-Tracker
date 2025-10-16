@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle, HelpCircle, Shield } from 'lucide-react';
+import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle, HelpCircle, Shield, Edit2 } from 'lucide-react';
 import { formatCurrency, formatDate, calculateProgress, isGoalOnTrack } from '../utils/formatters';
 import { ASBCalculator } from './investments/ASBCalculator';
 import { TabungHajiTracker } from './investments/TabungHajiTracker';
@@ -34,6 +34,8 @@ export const EnhancedDashboard = () => {
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [goalFormInitialData, setGoalFormInitialData] = useState<Partial<Goal> | null>(null);
+  const [editGoal, setEditGoal] = useState<Goal | null>(null);
+  const [editAccount, setEditAccount] = useState<Account | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'account' | 'goal', id: string, name: string } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -282,18 +284,31 @@ export const EnhancedDashboard = () => {
                             key={goal.id}
                             className="glass-card rounded-2xl p-6 glass-hover transition-all relative"
                           >
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteGoal(goal.id);
-                              }}
-                              className="absolute top-4 right-4 p-2 glass-card text-red-300 hover:text-red-400 rounded-lg transition-all"
-                              title="Delete goal"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="absolute top-4 right-4 flex gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditGoal(goal);
+                                  setShowGoalForm(true);
+                                }}
+                                className="p-2 glass-card text-blue-300 hover:text-blue-400 rounded-lg transition-all"
+                                title="Edit goal"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteGoal(goal.id);
+                                }}
+                                className="p-2 glass-card text-red-300 hover:text-red-400 rounded-lg transition-all"
+                                title="Delete goal"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                             <div onClick={() => setSelectedGoal(goal)} className="cursor-pointer">
-                              <h3 className="font-semibold text-white mb-1 pr-10">{goal.name}</h3>
+                              <h3 className="font-semibold text-white mb-1 pr-20">{goal.name}</h3>
                             <div className="flex items-center gap-2 text-sm text-white text-opacity-80 mb-4">
                               <span>{formatDate(goal.target_date)}</span>
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -418,6 +433,16 @@ export const EnhancedDashboard = () => {
                                 {account.account_type}
                               </span>
                               <button
+                                onClick={() => {
+                                  setEditAccount(account);
+                                  setShowAccountForm(true);
+                                }}
+                                className="p-2 glass-card text-blue-300 hover:text-blue-400 rounded-lg transition-all"
+                                title="Edit account"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
                                 onClick={() => deleteAccount(account.id)}
                                 className="p-2 glass-card text-red-300 hover:text-red-400 rounded-lg transition-all"
                                 title="Delete account"
@@ -519,16 +544,22 @@ export const EnhancedDashboard = () => {
             onClose={() => {
               setShowGoalForm(false);
               setGoalFormInitialData(null);
+              setEditGoal(null);
             }}
             onSuccess={loadData}
-            initialData={goalFormInitialData}
+            initialData={goalFormInitialData || undefined}
+            editData={editGoal || undefined}
           />
         )}
 
         {showAccountForm && (
           <AccountForm
-            onClose={() => setShowAccountForm(false)}
+            onClose={() => {
+              setShowAccountForm(false);
+              setEditAccount(null);
+            }}
             onSuccess={loadData}
+            editData={editAccount || undefined}
           />
         )}
 

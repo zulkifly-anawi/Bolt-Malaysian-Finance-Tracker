@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { X, Target, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatDateInput } from '../../utils/formatters';
 import { validateGoalData } from '../../utils/validation';
+import type { Goal } from '../../types/database';
 
 interface GoalFormProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ interface GoalFormProps {
     targetAmount: number;
     description?: string;
   };
+  editData?: Goal;
 }
 
 const GOAL_CATEGORIES = [
@@ -29,18 +31,20 @@ const GOAL_CATEGORIES = [
   'Other',
 ];
 
-export const GoalForm = ({ onClose, onSuccess, initialData }: GoalFormProps) => {
+export const GoalForm = ({ onClose, onSuccess, initialData, editData }: GoalFormProps) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const isEditMode = !!editData;
+
   const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    category: initialData?.category || 'Other',
-    targetAmount: initialData?.targetAmount || 0,
-    targetDate: '',
-    description: initialData?.description || '',
-    priority: 'medium' as 'high' | 'medium' | 'low',
+    name: editData?.name || initialData?.name || '',
+    category: editData?.category || initialData?.category || 'Other',
+    targetAmount: editData?.target_amount || initialData?.targetAmount || 0,
+    targetDate: editData?.target_date ? formatDateInput(editData.target_date) : '',
+    description: editData?.description || initialData?.description || '',
+    priority: (editData?.priority || 'medium') as 'high' | 'medium' | 'low',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,23 +67,41 @@ export const GoalForm = ({ onClose, onSuccess, initialData }: GoalFormProps) => 
     }
 
     try {
-      const { error: insertError } = await supabase.from('goals').insert({
-        user_id: user.id,
-        name: formData.name,
-        category: formData.category,
-        target_amount: formData.targetAmount,
-        target_date: formData.targetDate,
-        description: formData.description,
-        priority: formData.priority,
-        current_amount: 0,
-      });
+      if (isEditMode && editData) {
+        const { error: updateError } = await supabase
+          .from('goals')
+          .update({
+            name: formData.name,
+            category: formData.category,
+            target_amount: formData.targetAmount,
+            target_date: formData.targetDate,
+            description: formData.description,
+            priority: formData.priority,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editData.id)
+          .eq('user_id', user.id);
 
-      if (insertError) throw insertError;
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase.from('goals').insert({
+          user_id: user.id,
+          name: formData.name,
+          category: formData.category,
+          target_amount: formData.targetAmount,
+          target_date: formData.targetDate,
+          description: formData.description,
+          priority: formData.priority,
+          current_amount: 0,
+        });
+
+        if (insertError) throw insertError;
+      }
 
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to create goal. Please try again.');
+      setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} goal. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -95,8 +117,8 @@ export const GoalForm = ({ onClose, onSuccess, initialData }: GoalFormProps) => 
                 <Target className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">Create Financial Goal</h2>
-                <p className="text-sm text-white text-opacity-80">Set your target and track your progress</p>
+                <h2 className="text-2xl font-bold text-white">{isEditMode ? 'Edit Financial Goal' : 'Create Financial Goal'}</h2>
+                <p className="text-sm text-white text-opacity-80">{isEditMode ? 'Update your goal details' : 'Set your target and track your progress'}</p>
               </div>
             </div>
             <button onClick={onClose} className="text-white text-opacity-80 hover:text-opacity-100 transition-all">
@@ -232,7 +254,7 @@ export const GoalForm = ({ onClose, onSuccess, initialData }: GoalFormProps) => 
                 disabled={loading}
                 className="flex-1 px-4 py-3 glass-button text-white rounded-xl font-semibold disabled:opacity-50 transition-all"
               >
-                {loading ? 'Creating...' : 'Create Goal'}
+                {loading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Goal' : 'Create Goal')}
               </button>
             </div>
           </form>
