@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle, HelpCircle, Shield, Edit2 } from 'lucide-react';
-import { formatCurrency, formatDate, calculateProgress, isGoalOnTrack } from '../utils/formatters';
+import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle, HelpCircle, Shield, X, Edit2 } from 'lucide-react';
+import { formatCurrency } from '../utils/formatters';
 import { ASBCalculator } from './investments/ASBCalculator';
 import { TabungHajiTracker } from './investments/TabungHajiTracker';
 import { EPFCalculator } from './investments/EPFCalculator';
@@ -20,6 +20,11 @@ import { HelpCenter } from './help/HelpCenter';
 import { FloatingHelpButton } from './help/FloatingHelpButton';
 import { HelpTooltip } from './help/HelpTooltip';
 import { PrivacyPolicy } from './PrivacyPolicy';
+import { ProgressUpdateModal } from './goals/ProgressUpdateModal';
+import { ProgressHistoryTimeline } from './goals/ProgressHistoryTimeline';
+import { GoalCard } from './goals/GoalCard';
+import { ToastContainer } from './common/ToastContainer';
+import type { ToastProps } from './common/Toast';
 import type { Goal, Account, Achievement } from '../types/database';
 
 export const EnhancedDashboard = () => {
@@ -27,7 +32,7 @@ export const EnhancedDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [goals, setGoals] = useState<Goal[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [achievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [showGoalTemplates, setShowGoalTemplates] = useState(false);
@@ -39,7 +44,11 @@ export const EnhancedDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'account' | 'goal', id: string, name: string } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [onboardingCompleted, setOnboardingCompleted] = useState(true);
+  const [showProgressUpdate, setShowProgressUpdate] = useState(false);
+  const [selectedGoalForProgress, setSelectedGoalForProgress] = useState<Goal | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedGoalForHistory, setSelectedGoalForHistory] = useState<Goal | null>(null);
+  const [toasts, setToasts] = useState<ToastProps[]>([]);
 
   useEffect(() => {
     loadData();
@@ -56,7 +65,6 @@ export const EnhancedDashboard = () => {
       .maybeSingle();
 
     const completed = data?.onboarding_completed ?? false;
-    setOnboardingCompleted(completed);
     setShowOnboarding(!completed);
   };
 
@@ -100,6 +108,16 @@ export const EnhancedDashboard = () => {
     }
   };
 
+  const addToast = (message: string, type: 'success' | 'error') => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, message, type, onClose: removeToast }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+
   const loadData = async () => {
     if (!user) return;
     setLoading(true);
@@ -132,17 +150,18 @@ export const EnhancedDashboard = () => {
 
       if (goalsWithAmounts) {
         const processedGoals = goalsWithAmounts.map((goal: any) => {
-          let currentAmount = 0;
+          let accountProgress = 0;
           if (goal.account_goals && Array.isArray(goal.account_goals)) {
             for (const link of goal.account_goals) {
               if (link.accounts) {
                 const percentage = link.allocation_percentage || 100;
-                currentAmount += (link.accounts.current_balance * percentage) / 100;
+                accountProgress += (link.accounts.current_balance * percentage) / 100;
               }
             }
           }
           const { account_goals, ...goalData } = goal;
-          return { ...goalData, current_amount: currentAmount };
+          const manualAmount = goalData.manual_amount || 0;
+          return { ...goalData, current_amount: accountProgress + manualAmount, account_progress: accountProgress };
         });
         setGoals(processedGoals);
       }
@@ -276,65 +295,44 @@ export const EnhancedDashboard = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {goals.filter(g => !g.is_achieved).map((goal) => {
-                        const progress = calculateProgress(goal.current_amount || 0, goal.target_amount);
-                        const onTrack = isGoalOnTrack(goal.current_amount || 0, goal.target_amount, goal.target_date);
+                      {goals.filter(g => !g.is_achieved).map((goal: any) => {
+                        const accountProgress = goal.account_progress || 0;
                         return (
-                          <div
+                          <GoalCard
                             key={goal.id}
-                            className="glass-card rounded-2xl p-6 glass-hover transition-all relative"
-                          >
-                            <div className="absolute top-4 right-4 flex gap-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditGoal(goal);
-                                  setShowGoalForm(true);
-                                }}
-                                className="p-2 glass-card text-blue-300 hover:text-blue-400 rounded-lg transition-all"
-                                title="Edit goal"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteGoal(goal.id);
-                                }}
-                                className="p-2 glass-card text-red-300 hover:text-red-400 rounded-lg transition-all"
-                                title="Delete goal"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                            <div onClick={() => setSelectedGoal(goal)} className="cursor-pointer">
-                              <h3 className="font-semibold text-white mb-1 pr-20">{goal.name}</h3>
-                            <div className="flex items-center gap-2 text-sm text-white text-opacity-80 mb-4">
-                              <span>{formatDate(goal.target_date)}</span>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                onTrack ? 'glass text-green-300' : 'glass text-orange-300'
-                              }`}>
-                                {onTrack ? 'On Track' : 'Behind'}
-                              </span>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                <span className="text-white text-opacity-80">Progress</span>
-                                <span className="font-semibold text-white">{progress.toFixed(1)}%</span>
-                              </div>
-                              <div className="w-full glass rounded-full h-2">
-                                <div
-                                  className={`h-2 rounded-full transition-all ${onTrack ? 'bg-green-400' : 'bg-orange-400'}`}
-                                  style={{ width: `${Math.min(progress, 100)}%` }}
-                                />
-                              </div>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-white text-opacity-80">{formatCurrency(goal.current_amount || 0)}</span>
-                                <span className="font-medium text-white">{formatCurrency(goal.target_amount)}</span>
-                              </div>
-                            </div>
-                            </div>
-                          </div>
+                            goal={goal}
+                            accountProgress={accountProgress}
+                            onUpdateProgress={() => {
+                              setSelectedGoalForProgress(goal);
+                              setShowProgressUpdate(true);
+                            }}
+                            onViewDetails={() => {
+                              setSelectedGoalForHistory(goal);
+                              setShowHistory(true);
+                            }}
+                            onFullEdit={() => {
+                              setEditGoal(goal);
+                              setShowGoalForm(true);
+                            }}
+                            onDelete={() => deleteGoal(goal.id)}
+                            onMarkComplete={async () => {
+                              try {
+                                const { error } = await supabase
+                                  .from('goals')
+                                  .update({
+                                    is_achieved: !goal.is_achieved,
+                                    achieved_at: !goal.is_achieved ? new Date().toISOString() : null
+                                  })
+                                  .eq('id', goal.id);
+                                if (error) throw error;
+                                addToast(goal.is_achieved ? 'Goal marked as incomplete' : 'Congratulations! Goal achieved!', 'success');
+                                loadData();
+                              } catch (err) {
+                                addToast('Failed to update goal status', 'error');
+                              }
+                            }}
+                            onSuccess={loadData}
+                          />
                         );
                       })}
                     </div>
@@ -547,7 +545,7 @@ export const EnhancedDashboard = () => {
               setEditGoal(null);
             }}
             onSuccess={loadData}
-            initialData={goalFormInitialData || undefined}
+            initialData={goalFormInitialData as any || undefined}
             editData={editGoal || undefined}
           />
         )}
@@ -573,6 +571,67 @@ export const EnhancedDashboard = () => {
           onConfirm={handleConfirmDelete}
           onCancel={() => setDeleteConfirm(null)}
         />
+
+        {showProgressUpdate && selectedGoalForProgress && (
+          <ProgressUpdateModal
+            goal={selectedGoalForProgress}
+            accountProgress={(selectedGoalForProgress as any).account_progress || 0}
+            onClose={() => {
+              setShowProgressUpdate(false);
+              setSelectedGoalForProgress(null);
+            }}
+            onSuccess={() => {
+              addToast('Progress updated successfully!', 'success');
+              loadData();
+            }}
+          />
+        )}
+
+        {showHistory && selectedGoalForHistory && (
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={() => {
+              setShowHistory(false);
+              setSelectedGoalForHistory(null);
+            }}
+          >
+            <div
+              className="glass-strong rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto glow p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">{selectedGoalForHistory.name}</h2>
+                  <p className="text-sm text-white text-opacity-80">Goal Details & History</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowHistory(false);
+                    setSelectedGoalForHistory(null);
+                  }}
+                  className="text-white text-opacity-80 hover:text-opacity-100 transition-all"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <GoalProjection
+                goal={selectedGoalForHistory}
+                accounts={accounts}
+                monthlyContribution={500}
+              />
+
+              <div className="mt-6">
+                <ProgressHistoryTimeline
+                  goalId={selectedGoalForHistory.id}
+                  goalName={selectedGoalForHistory.name}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ToastContainer toasts={toasts} onClose={removeToast} />
       </div>
     </div>
   );

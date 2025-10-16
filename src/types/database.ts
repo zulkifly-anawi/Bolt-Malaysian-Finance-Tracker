@@ -44,11 +44,13 @@ export interface Goal {
   category: string | null;
   target_amount: number;
   current_amount: number;
+  manual_amount: number;
   target_date: string;
   priority: string;
   photo_url: string | null;
   is_achieved: boolean;
   achieved_at: string | null;
+  last_progress_update: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -109,6 +111,18 @@ export interface DividendHistory {
   account_type: string;
   year: number;
   dividend_rate: number;
+  created_at: string;
+}
+
+export interface GoalProgressEntry {
+  id: string;
+  goal_id: string;
+  user_id: string;
+  entry_type: 'add' | 'subtract' | 'set';
+  amount: number;
+  previous_manual_amount: number;
+  new_manual_amount: number;
+  notes: string | null;
   created_at: string;
 }
 

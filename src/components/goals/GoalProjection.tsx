@@ -1,17 +1,11 @@
 import { Target, TrendingUp, AlertCircle, Calendar, DollarSign } from 'lucide-react';
 import { formatCurrency, formatDate, calculateMonthsRemaining } from '../../utils/formatters';
 import { calculateGoalProjection, recommendBestAccount } from '../../utils/investmentCalculators';
+import type { Goal, Account } from '../../types/database';
 
 interface GoalProjectionProps {
-  goal: {
-    id: string;
-    name: string;
-    target_amount: number;
-    target_date: string;
-    category: string;
-    current_amount: number;
-  };
-  accounts: Array<{ id: string; type: string; name: string; current_balance: number }>;
+  goal: Goal;
+  accounts: Account[];
   monthlyContribution?: number;
 }
 
@@ -23,7 +17,7 @@ export const GoalProjection = ({ goal, accounts, monthlyContribution = 0 }: Goal
     monthlyContribution
   );
 
-  const bestAccount = recommendBestAccount(accounts, goal.category);
+  const bestAccount = recommendBestAccount(accounts as any, goal.category || 'Other');
   const monthsRemaining = calculateMonthsRemaining(goal.target_date);
   const remaining = goal.target_amount - goal.current_amount;
 
@@ -162,7 +156,7 @@ export const GoalProjection = ({ goal, accounts, monthlyContribution = 0 }: Goal
                   Best account for this goal: <span className="font-bold text-white">{bestAccount}</span>
                 </p>
                 <p className="text-xs text-white text-opacity-70 mt-1">
-                  This account type typically offers the best returns for {goal.category.toLowerCase()} goals.
+                  This account type typically offers the best returns for {(goal.category || 'Other').toLowerCase()} goals.
                 </p>
               </div>
             </div>
