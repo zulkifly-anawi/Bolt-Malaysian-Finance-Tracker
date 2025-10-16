@@ -81,6 +81,15 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
   }, [formData.currentBalance, editData, isEditMode]);
 
   useEffect(() => {
+    if (formData.accountType === 'ASB') {
+      setFormData(prev => ({
+        ...prev,
+        unitsHeld: prev.currentBalance
+      }));
+    }
+  }, [formData.currentBalance, formData.accountType]);
+
+  useEffect(() => {
     loadUserProfile();
   }, [user]);
 
@@ -432,16 +441,24 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
                 <label className="block text-sm font-medium text-white text-opacity-95 mb-2">
                   Units Held
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formData.unitsHeld || ''}
-                  onChange={(e) => setFormData({ ...formData, unitsHeld: parseInt(e.target.value) || 0 })}
-                  className="w-full px-4 py-3 glass-card text-white placeholder-white placeholder-opacity-40 rounded-xl focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none transition-all"
-                  placeholder="10000"
-                />
-                <p className="text-xs text-white text-opacity-60 mt-1">ASB units at RM1.00 per unit</p>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.unitsHeld || ''}
+                    readOnly
+                    disabled
+                    className="w-full px-4 py-3 glass-card text-white text-opacity-70 placeholder-white placeholder-opacity-40 rounded-xl outline-none cursor-not-allowed bg-white bg-opacity-5"
+                    placeholder="10000"
+                  />
+                </div>
+                <div className="flex items-start gap-2 mt-2">
+                  <Info className="w-4 h-4 text-white text-opacity-60 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-white text-opacity-60">
+                    ASB units are automatically calculated at RM1.00 per unit. This field reflects your current balance and cannot be edited manually.
+                  </p>
+                </div>
               </div>
             )}
 

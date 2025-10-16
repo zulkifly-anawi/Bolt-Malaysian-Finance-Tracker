@@ -125,6 +125,10 @@ export const validateAccountData = (data: {
     if (!unitsValidation.isValid) {
       errors.push(...unitsValidation.errors);
     }
+
+    if (data.account_type === 'ASB' && data.units_held !== data.current_balance) {
+      errors.push('ASB units held must equal current balance (RM1.00 per unit)');
+    }
   }
 
   if (data.monthly_contribution !== undefined) {
