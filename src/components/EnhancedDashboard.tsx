@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2 } from 'lucide-react';
+import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle } from 'lucide-react';
 import { formatCurrency, formatDate, calculateProgress, isGoalOnTrack } from '../utils/formatters';
 import { ASBCalculator } from './investments/ASBCalculator';
 import { TabungHajiTracker } from './investments/TabungHajiTracker';
@@ -14,73 +14,122 @@ import { AchievementsBadges } from './engagement/AchievementsBadges';
 import { NotificationsPanel } from './engagement/NotificationsPanel';
 import { InsightsTips } from './engagement/InsightsTips';
 import { ExportData } from './engagement/ExportData';
+import { ConfirmDialog } from './ConfirmDialog';
+import type { Goal, Account, Achievement } from '../types/database';
 
 export const EnhancedDashboard = () => {
   const { signOut, user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [goals, setGoals] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [achievements, setAchievements] = useState<any[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGoal, setSelectedGoal] = useState<any>(null);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [showGoalTemplates, setShowGoalTemplates] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [showAccountForm, setShowAccountForm] = useState(false);
-  const [goalFormInitialData, setGoalFormInitialData] = useState<any>(null);
+  const [goalFormInitialData, setGoalFormInitialData] = useState<Partial<Goal> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'account' | 'goal', id: string, name: string } | null>(null);
 
   useEffect(() => {
     loadData();
   }, [user]);
 
   const deleteAccount = async (accountId: string) => {
-    if (!confirm('Are you sure you want to delete this account? This action cannot be undone.')) return;
-
-    await supabase.from('accounts').delete().eq('id', accountId);
-    loadData();
+    const account = accounts.find(a => a.id === accountId);
+    if (!account) return;
+    setDeleteConfirm({ type: 'account', id: accountId, name: account.name });
   };
 
   const deleteGoal = async (goalId: string) => {
-    if (!confirm('Are you sure you want to delete this goal? This action cannot be undone.')) return;
+    const goal = goals.find(g => g.id === goalId);
+    if (!goal) return;
+    setDeleteConfirm({ type: 'goal', id: goalId, name: goal.name });
+  };
 
-    await supabase.from('goals').delete().eq('id', goalId);
-    loadData();
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm) return;
+
+    setError(null);
+    try {
+      if (deleteConfirm.type === 'account') {
+        const { error: deleteError } = await supabase
+          .from('accounts')
+          .delete()
+          .eq('id', deleteConfirm.id);
+
+        if (deleteError) throw deleteError;
+      } else {
+        const { error: deleteError } = await supabase
+          .from('goals')
+          .delete()
+          .eq('id', deleteConfirm.id);
+
+        if (deleteError) throw deleteError;
+      }
+
+      await loadData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete. Please try again.');
+      console.error('Delete error:', err);
+    }
   };
 
   const loadData = async () => {
     if (!user) return;
     setLoading(true);
+    setError(null);
 
-    const [goalsData, accountsData] = await Promise.all([
-      supabase.from('goals').select('*').eq('user_id', user.id).order('target_date'),
-      supabase.from('accounts').select('*').eq('user_id', user.id),
-    ]);
+    try {
+      const { data: goalsWithAmounts, error: goalsError } = await supabase
+        .from('goals')
+        .select(`
+          *,
+          account_goals (
+            account_id,
+            allocation_percentage,
+            accounts (
+              current_balance
+            )
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('target_date');
 
-    if (goalsData.data) {
-      const goalsWithAmounts = await Promise.all(
-        goalsData.data.map(async (goal) => {
-          const { data: linkedAccounts } = await supabase
-            .from('account_goals')
-            .select('account_id, allocation_percentage')
-            .eq('goal_id', goal.id);
+      if (goalsError) throw goalsError;
 
+      const { data: accountsData, error: accountsError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (accountsError) throw accountsError;
+
+      if (goalsWithAmounts) {
+        const processedGoals = goalsWithAmounts.map((goal: any) => {
           let currentAmount = 0;
-          if (linkedAccounts) {
-            for (const link of linkedAccounts) {
-              const account = accountsData.data?.find((a: any) => a.id === link.account_id);
-              if (account) {
+          if (goal.account_goals && Array.isArray(goal.account_goals)) {
+            for (const link of goal.account_goals) {
+              if (link.accounts) {
                 const percentage = link.allocation_percentage || 100;
-                currentAmount += (account.current_balance * percentage) / 100;
+                currentAmount += (link.accounts.current_balance * percentage) / 100;
               }
             }
           }
-          return { ...goal, current_amount: currentAmount };
-        })
-      );
-      setGoals(goalsWithAmounts);
-    }
+          const { account_goals, ...goalData } = goal;
+          return { ...goalData, current_amount: currentAmount };
+        });
+        setGoals(processedGoals);
+      }
 
-    if (accountsData.data) setAccounts(accountsData.data);
-    setLoading(false);
+      if (accountsData) setAccounts(accountsData);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load data. Please refresh the page.');
+      console.error('Load data error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const totalNetWorth = accounts.reduce((sum, acc) => sum + acc.current_balance, 0);
@@ -128,6 +177,15 @@ export const EnhancedDashboard = () => {
             </button>
           ))}
         </div>
+
+        {error && (
+          <div className="glass-strong rounded-2xl p-4 mb-6 border border-red-500 border-opacity-30">
+            <div className="flex items-center gap-3 text-red-200">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -428,6 +486,17 @@ export const EnhancedDashboard = () => {
             onSuccess={loadData}
           />
         )}
+
+        <ConfirmDialog
+          isOpen={deleteConfirm !== null}
+          title={`Delete ${deleteConfirm?.type === 'account' ? 'Account' : 'Goal'}`}
+          message={`Are you sure you want to delete "${deleteConfirm?.name}"? This action cannot be undone and will also delete all associated data.`}
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          variant="danger"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeleteConfirm(null)}
+        />
       </div>
     </div>
   );

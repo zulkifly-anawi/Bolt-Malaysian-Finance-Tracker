@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { X, Target } from 'lucide-react';
+import { X, Target, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency } from '../../utils/formatters';
+import { validateGoalData } from '../../utils/validation';
 
 interface GoalFormProps {
   onClose: () => void;
@@ -49,36 +50,39 @@ export const GoalForm = ({ onClose, onSuccess, initialData }: GoalFormProps) => 
     setError('');
     setLoading(true);
 
-    if (formData.targetAmount <= 0) {
-      setError('Target amount must be greater than 0');
-      setLoading(false);
-      return;
-    }
-
-    if (!formData.targetDate) {
-      setError('Please select a target date');
-      setLoading(false);
-      return;
-    }
-
-    const { error: insertError } = await supabase.from('goals').insert({
-      user_id: user.id,
+    const validation = validateGoalData({
       name: formData.name,
-      category: formData.category,
       target_amount: formData.targetAmount,
       target_date: formData.targetDate,
-      description: formData.description,
-      priority: formData.priority,
     });
 
-    if (insertError) {
-      setError(insertError.message);
+    if (!validation.isValid) {
+      setError(validation.errors.join('. '));
       setLoading(false);
       return;
     }
 
-    onSuccess();
-    onClose();
+    try {
+      const { error: insertError } = await supabase.from('goals').insert({
+        user_id: user.id,
+        name: formData.name,
+        category: formData.category,
+        target_amount: formData.targetAmount,
+        target_date: formData.targetDate,
+        description: formData.description,
+        priority: formData.priority,
+        current_amount: 0,
+      });
+
+      if (insertError) throw insertError;
+
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to create goal. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -101,8 +105,11 @@ export const GoalForm = ({ onClose, onSuccess, initialData }: GoalFormProps) => 
           </div>
 
           {error && (
-            <div className="glass-card border-red-300 text-white px-4 py-3 rounded-xl text-sm mb-4">
-              {error}
+            <div className="glass-strong rounded-2xl p-4 mb-4 border border-red-500 border-opacity-30">
+              <div className="flex items-center gap-3 text-red-200">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <p>{error}</p>
+              </div>
             </div>
           )}
 

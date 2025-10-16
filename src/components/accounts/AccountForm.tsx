@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { X, Wallet } from 'lucide-react';
+import { X, Wallet, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency } from '../../utils/formatters';
+import { validateAccountData } from '../../utils/validation';
 
 interface AccountFormProps {
   onClose: () => void;
@@ -57,39 +58,60 @@ export const AccountForm = ({ onClose, onSuccess }: AccountFormProps) => {
     setError('');
     setLoading(true);
 
-    if (formData.currentBalance < 0) {
-      setError('Balance cannot be negative');
-      setLoading(false);
-      return;
-    }
-
-    const { error: insertError } = await supabase.from('accounts').insert({
-      user_id: user.id,
+    const validation = validateAccountData({
       name: formData.name,
       account_type: formData.accountType,
-      institution: formData.institution || null,
       current_balance: formData.currentBalance,
-      monthly_contribution: formData.monthlyContribution || null,
-      units_held: formData.unitsHeld || null,
-      dividend_rate: formData.dividendRate || null,
+      units_held: formData.unitsHeld,
+      monthly_contribution: formData.monthlyContribution,
+      dividend_rate: formData.dividendRate,
     });
 
-    if (insertError) {
-      setError(insertError.message);
+    if (!validation.isValid) {
+      setError(validation.errors.join('. '));
       setLoading(false);
       return;
     }
 
-    await supabase.from('balance_entries').insert({
-      user_id: user.id,
-      account_id: (await supabase.from('accounts').select('id').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).single()).data?.id,
-      balance: formData.currentBalance,
-      entry_date: new Date().toISOString().split('T')[0],
-      notes: 'Initial balance',
-    });
+    try {
+      const { data: insertedAccount, error: insertError } = await supabase
+        .from('accounts')
+        .insert({
+          user_id: user.id,
+          name: formData.name,
+          account_type: formData.accountType,
+          institution: formData.institution || null,
+          current_balance: formData.currentBalance,
+          monthly_contribution: formData.monthlyContribution || 0,
+          units_held: formData.unitsHeld || 0,
+          dividend_rate: formData.dividendRate || 0,
+        })
+        .select()
+        .single();
 
-    onSuccess();
-    onClose();
+      if (insertError) throw insertError;
+      if (!insertedAccount) throw new Error('Failed to create account');
+
+      const { error: balanceError } = await supabase
+        .from('balance_entries')
+        .insert({
+          account_id: insertedAccount.id,
+          balance: formData.currentBalance,
+          entry_date: new Date().toISOString().split('T')[0],
+          notes: 'Initial balance',
+        });
+
+      if (balanceError) {
+        console.error('Failed to create initial balance entry:', balanceError);
+      }
+
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to create account. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const showASBFields = formData.accountType === 'ASB';
@@ -115,8 +137,11 @@ export const AccountForm = ({ onClose, onSuccess }: AccountFormProps) => {
           </div>
 
           {error && (
-            <div className="glass-card border-red-300 text-white px-4 py-3 rounded-xl text-sm mb-4">
-              {error}
+            <div className="glass-strong rounded-2xl p-4 mb-4 border border-red-500 border-opacity-30">
+              <div className="flex items-center gap-3 text-red-200">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <p>{error}</p>
+              </div>
             </div>
           )}
 
