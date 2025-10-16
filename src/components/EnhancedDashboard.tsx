@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle, HelpCircle } from 'lucide-react';
+import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle, HelpCircle, Shield } from 'lucide-react';
 import { formatCurrency, formatDate, calculateProgress, isGoalOnTrack } from '../utils/formatters';
 import { ASBCalculator } from './investments/ASBCalculator';
 import { TabungHajiTracker } from './investments/TabungHajiTracker';
@@ -19,6 +19,7 @@ import { OnboardingTour } from './help/OnboardingTour';
 import { HelpCenter } from './help/HelpCenter';
 import { FloatingHelpButton } from './help/FloatingHelpButton';
 import { HelpTooltip } from './help/HelpTooltip';
+import { PrivacyPolicy } from './PrivacyPolicy';
 import type { Goal, Account, Achievement } from '../types/database';
 
 export const EnhancedDashboard = () => {
@@ -186,6 +187,7 @@ export const EnhancedDashboard = () => {
             { id: 'tips', label: 'Tips', icon: Lightbulb },
             { id: 'export', label: 'Export', icon: Download },
             { id: 'help', label: 'Help', icon: HelpCircle },
+            { id: 'privacy', label: 'Privacy', icon: Shield },
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -495,6 +497,10 @@ export const EnhancedDashboard = () => {
 
             {activeTab === 'help' && (
               <HelpCenter />
+            )}
+
+            {activeTab === 'privacy' && (
+              <PrivacyPolicy />
             )}
           </>
         )}

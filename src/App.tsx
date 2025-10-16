@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoginPage, SignupPage, ResetPasswordPage } from './components/Auth';
 import { EnhancedDashboard } from './components/EnhancedDashboard';
+import { LandingPage } from './components/LandingPage';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
 
-type AuthView = 'login' | 'signup' | 'reset';
+type AuthView = 'landing' | 'login' | 'signup' | 'reset' | 'privacy';
 
 function AppContent() {
   const { user, loading } = useAuth();
-  const [authView, setAuthView] = useState<AuthView>('login');
+  const [authView, setAuthView] = useState<AuthView>('landing');
 
   if (loading) {
     return (
@@ -20,19 +22,74 @@ function AppContent() {
   }
 
   if (!user) {
-    switch (authView) {
-      case 'signup':
-        return <SignupPage onSwitchToLogin={() => setAuthView('login')} />;
-      case 'reset':
-        return <ResetPasswordPage onBack={() => setAuthView('login')} />;
-      default:
-        return (
+    return (
+      <div className="min-h-screen gradient-mesh">
+        {authView === 'privacy' ? (
+          <>
+            <nav className="glass-strong shadow-2xl sticky top-0 z-50 backdrop-blur-xl">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center h-16">
+                  <button
+                    onClick={() => setAuthView('landing')}
+                    className="text-xl font-bold text-white hover:text-opacity-80 transition-colors"
+                  >
+                    Financial Tracker
+                  </button>
+                  <button
+                    onClick={() => setAuthView('login')}
+                    className="px-6 py-2 glass-button text-white rounded-xl font-semibold"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              </div>
+            </nav>
+            <PrivacyPolicy />
+          </>
+        ) : authView === 'signup' ? (
+          <SignupPage onSwitchToLogin={() => setAuthView('login')} />
+        ) : authView === 'reset' ? (
+          <ResetPasswordPage onBack={() => setAuthView('login')} />
+        ) : authView === 'login' ? (
           <LoginPage
             onSwitchToSignup={() => setAuthView('signup')}
             onSwitchToReset={() => setAuthView('reset')}
           />
-        );
-    }
+        ) : (
+          <>
+            <nav className="glass-strong shadow-2xl sticky top-0 z-50 backdrop-blur-xl">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center h-16">
+                  <div className="text-xl font-bold text-white">Financial Tracker</div>
+                  <button
+                    onClick={() => setAuthView('login')}
+                    className="px-6 py-2 glass-button text-white rounded-xl font-semibold"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              </div>
+            </nav>
+            <LandingPage onGetStarted={() => setAuthView('signup')} />
+            <footer className="glass-strong mt-12 py-6">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-white text-opacity-70 text-sm">
+                  <p>© 2025 Financial Tracker. Built for Malaysians.</p>
+                  <div className="flex gap-6">
+                    <button
+                      onClick={() => setAuthView('privacy')}
+                      className="hover:text-white transition-colors"
+                    >
+                      Privacy Policy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </footer>
+          </>
+        )}
+      </div>
+    );
   }
 
   return <EnhancedDashboard />;

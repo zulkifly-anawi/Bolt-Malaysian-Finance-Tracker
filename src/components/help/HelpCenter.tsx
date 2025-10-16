@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, ChevronDown, ChevronUp, HelpCircle, BookOpen, Shield, TrendingUp, Target, Wallet } from 'lucide-react';
+import { FeedbackForm } from './FeedbackForm';
 
 interface FAQItem {
   question: string;
@@ -212,6 +213,10 @@ export const HelpCenter = () => {
             );
           })
         )}
+      </div>
+
+      <div className="mt-12">
+        <FeedbackForm />
       </div>
     </div>
   );
