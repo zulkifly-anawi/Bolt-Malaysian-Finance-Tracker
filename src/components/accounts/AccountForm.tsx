@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Wallet, AlertCircle } from 'lucide-react';
+import { X, Wallet, AlertCircle, Info } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency } from '../../utils/formatters';
-import { validateAccountData } from '../../utils/validation';
+import { validateAccountData, validateAge, validateSalary } from '../../utils/validation';
 import { EPFContributionSection } from './EPFContributionSection';
 import type { Account } from '../../types/database';
 
@@ -54,6 +54,8 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
     monthlyContribution: editData?.monthly_contribution || 0,
     unitsHeld: editData?.units_held || 0,
     dividendRate: editData?.dividend_rate || 0,
+    age: 0,
+    monthlySalary: 0,
   });
 
   const [epfContribution, setEpfContribution] = useState<{
@@ -70,8 +72,6 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
     useTotal: editData?.use_total_contribution ?? true,
   });
 
-  const [userSalary, setUserSalary] = useState(0);
-
   const [balanceChanged, setBalanceChanged] = useState(false);
 
   useEffect(() => {
@@ -81,19 +81,24 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
   }, [formData.currentBalance, editData, isEditMode]);
 
   useEffect(() => {
-    loadUserSalary();
+    loadUserProfile();
   }, [user]);
 
-  const loadUserSalary = async () => {
+  const loadUserProfile = async () => {
     if (!user) return;
     const { data } = await supabase
       .from('profiles')
-      .select('monthly_salary')
+      .select('monthly_salary, age')
       .eq('id', user.id)
       .maybeSingle();
 
-    if (data?.monthly_salary) {
-      setUserSalary(data.monthly_salary);
+    if (data) {
+      if (data.monthly_salary) {
+        setFormData(prev => ({ ...prev, monthlySalary: data.monthly_salary || 0 }));
+      }
+      if (data.age) {
+        setFormData(prev => ({ ...prev, age: data.age || 0 }));
+      }
     }
   };
 
@@ -119,7 +124,38 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
       return;
     }
 
+    if (formData.accountType === 'EPF') {
+      const ageValidation = validateAge(formData.age);
+      if (!ageValidation.isValid) {
+        setError(ageValidation.errors.join('. '));
+        setLoading(false);
+        return;
+      }
+
+      const salaryValidation = validateSalary(formData.monthlySalary);
+      if (!salaryValidation.isValid) {
+        setError(salaryValidation.errors.join('. '));
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
+      if (formData.accountType === 'EPF' && formData.age > 0 && formData.monthlySalary > 0) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            age: formData.age,
+            monthly_salary: formData.monthlySalary,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', user.id);
+
+        if (profileError) {
+          console.error('Failed to update profile:', profileError);
+        }
+      }
+
       const updateData: any = {
         name: formData.name,
         account_type: formData.accountType,
@@ -297,6 +333,59 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
               </select>
             </div>
 
+            {formData.accountType === 'EPF' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-white text-opacity-95 mb-2">
+                    Your Age *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="18"
+                    max="65"
+                    value={formData.age || ''}
+                    onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || 0 })}
+                    className="w-full px-4 py-3 glass-card text-white placeholder-white placeholder-opacity-40 rounded-xl focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none transition-all"
+                    placeholder="30"
+                  />
+                  <div className="flex items-start gap-2 mt-2">
+                    <Info className="w-4 h-4 text-white text-opacity-60 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-white text-opacity-60">
+                      Required for EPF retirement projections and benchmarks (Age 18-65)
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white text-opacity-95 mb-2">
+                    Monthly Salary (RM) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="0.01"
+                    value={formData.monthlySalary || ''}
+                    onChange={(e) => setFormData({ ...formData, monthlySalary: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-3 glass-card text-white placeholder-white placeholder-opacity-40 rounded-xl focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none transition-all"
+                    placeholder="5000"
+                  />
+                  {formData.monthlySalary > 0 && (
+                    <p className="text-xs text-white text-opacity-60 mt-1">
+                      {formatCurrency(formData.monthlySalary)} per month
+                    </p>
+                  )}
+                  <div className="flex items-start gap-2 mt-2">
+                    <Info className="w-4 h-4 text-white text-opacity-60 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-white text-opacity-60">
+                      Used to calculate your EPF contributions and retirement projections
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-white text-opacity-95 mb-2">
                 Current Balance (RM) *
@@ -313,9 +402,9 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
               />
             </div>
 
-            {formData.accountType === 'EPF' && userSalary > 0 && (
+            {formData.accountType === 'EPF' && formData.monthlySalary > 0 && (
               <EPFContributionSection
-                monthlySalary={userSalary}
+                monthlySalary={formData.monthlySalary}
                 onContributionChange={setEpfContribution}
                 initialData={epfContribution}
               />

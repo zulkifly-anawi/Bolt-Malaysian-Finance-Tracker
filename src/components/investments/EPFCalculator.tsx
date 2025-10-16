@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PiggyBank, TrendingUp, AlertCircle, CheckCircle2, Calendar, Settings } from 'lucide-react';
+import { Calculator, TrendingUp, AlertCircle, CheckCircle2, Calendar, Settings } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import { calculateEPFProjection, DIVIDEND_RATES, getEPFBenchmarkForAge } from '../../utils/investmentCalculators';
 import { supabase } from '../../lib/supabase';
@@ -21,7 +21,6 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
   const [userAge, setUserAge] = useState<number>(30);
   const [monthlySalary, setMonthlySalary] = useState<number>(5000);
   const [projection, setProjection] = useState<any>(null);
-  const [editing, setEditing] = useState(false);
   const [contributionSettings, setContributionSettings] = useState<EPFContributionSettings | null>(null);
   const [contributionBreakdown, setContributionBreakdown] = useState<any>(null);
 
@@ -68,15 +67,6 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
     setContributionSettings(settings);
   };
 
-  const saveProfile = async () => {
-    if (!user) return;
-    await supabase
-      .from('profiles')
-      .update({ age: userAge, monthly_salary: monthlySalary })
-      .eq('id', user.id);
-    setEditing(false);
-  };
-
   const currentYearRate = DIVIDEND_RATES.EPF[2024];
   const estimatedAnnualDividend = account.current_balance * (currentYearRate / 100);
   const currentBenchmark = getEPFBenchmarkForAge(userAge);
@@ -84,7 +74,7 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
 
   const statusColors = {
     ahead: { border: 'border-green-400 border-opacity-30', text: 'text-green-400', badge: 'bg-green-600' },
-    'on-track': { border: 'border-blue-400 border-opacity-30', text: 'text-blue-400', badge: 'bg-blue-600' },
+    'on-track': { border: 'border-gray-400 border-opacity-30', text: 'text-gray-300', badge: 'bg-gray-700' },
     behind: { border: 'border-orange-400 border-opacity-30', text: 'text-orange-400', badge: 'bg-orange-600' },
   };
 
@@ -100,49 +90,14 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
   return (
     <div className="glass-card rounded-3xl p-6 liquid-shine glow">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-          <PiggyBank className="w-6 h-6 text-white" />
+        <div className="w-12 h-12 bg-gradient-to-br from-gray-600 to-gray-800 rounded-xl flex items-center justify-center shadow-lg">
+          <Calculator className="w-6 h-6 text-white" />
         </div>
         <div className="flex-1">
           <h3 className="text-lg font-bold text-white">EPF Retirement Calculator</h3>
           <p className="text-sm text-white text-opacity-80">{account.name}</p>
         </div>
-        <button
-          onClick={() => editing ? saveProfile() : setEditing(true)}
-          className="px-4 py-2 glass-button text-white text-sm font-medium rounded-lg transition-all"
-        >
-          {editing ? 'Save' : 'Update Info'}
-        </button>
       </div>
-
-      {editing ? (
-        <div className="glass-strong rounded-2xl p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-white text-opacity-90 mb-2">Your Age</label>
-              <input
-                type="number"
-                value={userAge}
-                onChange={(e) => setUserAge(parseInt(e.target.value) || 30)}
-                className="w-full px-4 py-2 glass text-white placeholder-white placeholder-opacity-40 rounded-lg focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none"
-                min="18"
-                max="100"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white text-opacity-90 mb-2">Monthly Salary (RM)</label>
-              <input
-                type="number"
-                value={monthlySalary}
-                onChange={(e) => setMonthlySalary(parseFloat(e.target.value) || 0)}
-                className="w-full px-4 py-2 glass text-white placeholder-white placeholder-opacity-40 rounded-lg focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none"
-                min="0"
-                step="100"
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="glass rounded-2xl p-4">
@@ -152,7 +107,7 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
 
         <div className="glass rounded-2xl p-4">
           <p className="text-sm font-medium text-white text-opacity-80 mb-2">2024 Dividend Rate</p>
-          <p className="text-2xl font-bold text-blue-400">{currentYearRate}%</p>
+          <p className="text-2xl font-bold text-gray-200">{currentYearRate}%</p>
         </div>
 
         <div className="glass rounded-2xl p-4">
@@ -199,7 +154,7 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-white text-opacity-70">Used in Projections</span>
-                    <span className="font-bold text-blue-400">
+                    <span className="font-bold text-gray-200">
                       {formatCurrency(contributionBreakdown.usedContribution)}
                     </span>
                   </div>
@@ -241,7 +196,7 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
           {Object.entries(DIVIDEND_RATES.EPF).reverse().map(([year, rate]) => (
             <div key={year} className="text-center">
               <p className="text-xs text-white text-opacity-70 mb-1">{year}</p>
-              <p className="text-sm font-bold text-blue-400">{rate}%</p>
+              <p className="text-sm font-bold text-gray-300">{rate}%</p>
             </div>
           ))}
         </div>

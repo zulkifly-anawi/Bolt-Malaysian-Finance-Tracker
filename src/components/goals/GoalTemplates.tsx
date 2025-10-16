@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Shield, Plane, Compass, GraduationCap, PiggyBank, Heart, Car, Plus, Target } from 'lucide-react';
+import { Home, Shield, Plane, Compass, GraduationCap, Calculator, Heart, Car, Plus, Target } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -22,7 +22,8 @@ const iconMap: Record<string, any> = {
   'plane': Plane,
   'compass': Compass,
   'graduation-cap': GraduationCap,
-  'piggy-bank': PiggyBank,
+  'calculator': Calculator,
+  'piggy-bank': Calculator,
   'heart': Heart,
   'car': Car,
 };

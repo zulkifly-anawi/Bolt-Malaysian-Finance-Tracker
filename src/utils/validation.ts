@@ -147,6 +147,54 @@ export const validateAccountData = (data: {
   };
 };
 
+export const validateAge = (age: number): ValidationResult => {
+  const errors: string[] = [];
+
+  if (isNaN(age) || age === 0) {
+    errors.push('Age must be a valid number');
+    return { isValid: false, errors };
+  }
+
+  if (age < 18) {
+    errors.push('Age must be at least 18 years');
+  }
+
+  if (age > 65) {
+    errors.push('Age cannot exceed 65 years');
+  }
+
+  if (age !== Math.floor(age)) {
+    errors.push('Age must be a whole number');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
+export const validateSalary = (salary: number): ValidationResult => {
+  const errors: string[] = [];
+
+  if (isNaN(salary)) {
+    errors.push('Monthly salary must be a valid number');
+    return { isValid: false, errors };
+  }
+
+  if (salary <= 0) {
+    errors.push('Monthly salary must be greater than zero');
+  }
+
+  if (salary > 1000000) {
+    errors.push('Monthly salary cannot exceed RM1,000,000');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
 export const validateGoalData = (data: {
   name: string;
   target_amount: number;

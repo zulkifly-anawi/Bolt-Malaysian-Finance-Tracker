@@ -126,7 +126,7 @@ export const EPFContributionSection = ({
         <>
           <div className="glass rounded-2xl p-4">
             <div className="flex items-start gap-2 mb-3">
-              <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+              <Info className="w-4 h-4 text-gray-300 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-white text-opacity-80">
                 Standard KWSP rates: Employee 11%, Employer 12-13%. Adjust if your rates differ.
               </p>
@@ -180,7 +180,7 @@ export const EPFContributionSection = ({
             <button
               type="button"
               onClick={() => setShowPresets(!showPresets)}
-              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              className="text-sm text-gray-300 hover:text-gray-200 transition-colors"
             >
               {showPresets ? 'Hide' : 'Show'} Rate Presets
             </button>
@@ -241,7 +241,7 @@ export const EPFContributionSection = ({
                 <div className="pt-2 border-t border-white border-opacity-20">
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-white">Used in Projections</span>
-                    <span className="font-bold text-blue-400 text-lg">{formatCurrency(employeeContribution)}</span>
+                    <span className="font-bold text-gray-200 text-lg">{formatCurrency(employeeContribution)}</span>
                   </div>
                   <p className="text-xs text-white text-opacity-60 mt-1">
                     Only employee portion will be used for retirement calculations
