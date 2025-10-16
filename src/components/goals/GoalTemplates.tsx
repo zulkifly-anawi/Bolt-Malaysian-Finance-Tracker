@@ -50,7 +50,7 @@ export const GoalTemplates = ({ onSelectTemplate }: GoalTemplatesProps) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
       </div>
     );
   }
@@ -59,8 +59,8 @@ export const GoalTemplates = ({ onSelectTemplate }: GoalTemplatesProps) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-xl font-bold text-gray-900">Malaysian Goal Templates</h3>
-          <p className="text-sm text-gray-600 mt-1">Quick start with common financial goals</p>
+          <h3 className="text-xl font-bold text-white drop-shadow-lg">Malaysian Goal Templates</h3>
+          <p className="text-sm text-white text-opacity-80 mt-1">Quick start with common financial goals</p>
         </div>
       </div>
 
@@ -72,22 +72,22 @@ export const GoalTemplates = ({ onSelectTemplate }: GoalTemplatesProps) => {
             <button
               key={template.id}
               onClick={() => onSelectTemplate(template)}
-              className="bg-white rounded-xl p-6 border-2 border-gray-200 hover:border-blue-500 hover:shadow-lg transition-all text-left group"
+              className="glass-card rounded-2xl p-6 glass-hover text-left group transition-all"
             >
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-blue-100 group-hover:bg-blue-600 rounded-xl flex items-center justify-center transition-colors">
-                  <IconComponent className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
+                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center transition-all shadow-lg group-hover:scale-110">
+                  <IconComponent className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
+                  <h4 className="font-bold text-white mb-1 group-hover:text-cyan-300 transition-colors">
                     {template.name}
                   </h4>
-                  <p className="text-xs text-gray-600 mb-3 line-clamp-2">{template.description}</p>
+                  <p className="text-xs text-white text-opacity-70 mb-3 line-clamp-2">{template.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-900">
+                    <span className="text-sm font-semibold text-white">
                       {formatCurrency(template.default_amount)}
                     </span>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    <span className="text-xs text-white text-opacity-60 glass px-2 py-1 rounded-lg">
                       {template.category}
                     </span>
                   </div>
@@ -98,14 +98,14 @@ export const GoalTemplates = ({ onSelectTemplate }: GoalTemplatesProps) => {
         })}
       </div>
 
-      <div className="mt-6 p-6 bg-gradient-to-br from-blue-50 to-green-50 rounded-xl border-2 border-dashed border-blue-300">
+      <div className="mt-6 glass-strong rounded-2xl p-6 border-2 border-dashed border-cyan-400 border-opacity-30 glow">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
             <Plus className="w-6 h-6 text-white" />
           </div>
-          <div>
-            <h4 className="font-bold text-gray-900 mb-2">Create Custom Goal</h4>
-            <p className="text-sm text-gray-600 mb-4">
+          <div className="flex-1">
+            <h4 className="font-bold text-white mb-2">Create Custom Goal</h4>
+            <p className="text-sm text-white text-opacity-80 mb-4">
               Don't see what you're looking for? Create a custom goal with your own target amount and date.
             </p>
             <button
@@ -117,7 +117,7 @@ export const GoalTemplates = ({ onSelectTemplate }: GoalTemplatesProps) => {
                 default_amount: 0,
                 icon: 'target',
               })}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-gradient-to-br from-cyan-500 to-blue-600 text-white text-sm font-semibold rounded-xl hover:scale-105 transition-all shadow-lg"
             >
               Create Custom Goal
             </button>
