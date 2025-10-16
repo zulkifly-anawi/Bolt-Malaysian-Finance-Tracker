@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency } from '../../utils/formatters';
 import { validateAccountData } from '../../utils/validation';
+import { EPFContributionSection } from './EPFContributionSection';
 import type { Account } from '../../types/database';
 
 interface AccountFormProps {
@@ -55,6 +56,22 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
     dividendRate: editData?.dividend_rate || 0,
   });
 
+  const [epfContribution, setEpfContribution] = useState<{
+    isManual: boolean;
+    manualAmount?: number;
+    employeePercentage?: number;
+    employerPercentage?: number;
+    useTotal?: boolean;
+  }>({
+    isManual: editData?.is_manual_contribution || false,
+    manualAmount: editData?.monthly_contribution || 0,
+    employeePercentage: editData?.employee_contribution_percentage || undefined,
+    employerPercentage: editData?.employer_contribution_percentage || undefined,
+    useTotal: editData?.use_total_contribution ?? true,
+  });
+
+  const [userSalary, setUserSalary] = useState(0);
+
   const [balanceChanged, setBalanceChanged] = useState(false);
 
   useEffect(() => {
@@ -62,6 +79,23 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
       setBalanceChanged(formData.currentBalance !== editData.current_balance);
     }
   }, [formData.currentBalance, editData, isEditMode]);
+
+  useEffect(() => {
+    loadUserSalary();
+  }, [user]);
+
+  const loadUserSalary = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('monthly_salary')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (data?.monthly_salary) {
+      setUserSalary(data.monthly_salary);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,19 +120,36 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
     }
 
     try {
+      const updateData: any = {
+        name: formData.name,
+        account_type: formData.accountType,
+        institution: formData.institution || null,
+        current_balance: formData.currentBalance,
+        units_held: formData.unitsHeld || 0,
+        dividend_rate: formData.dividendRate || 0,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (formData.accountType === 'EPF') {
+        updateData.is_manual_contribution = epfContribution.isManual;
+        if (epfContribution.isManual) {
+          updateData.monthly_contribution = epfContribution.manualAmount || 0;
+          updateData.employee_contribution_percentage = null;
+          updateData.employer_contribution_percentage = null;
+        } else {
+          updateData.monthly_contribution = 0;
+          updateData.employee_contribution_percentage = epfContribution.employeePercentage || null;
+          updateData.employer_contribution_percentage = epfContribution.employerPercentage || null;
+          updateData.use_total_contribution = epfContribution.useTotal ?? true;
+        }
+      } else {
+        updateData.monthly_contribution = formData.monthlyContribution || 0;
+      }
+
       if (isEditMode && editData) {
         const { error: updateError } = await supabase
           .from('accounts')
-          .update({
-            name: formData.name,
-            account_type: formData.accountType,
-            institution: formData.institution || null,
-            current_balance: formData.currentBalance,
-            monthly_contribution: formData.monthlyContribution || 0,
-            units_held: formData.unitsHeld || 0,
-            dividend_rate: formData.dividendRate || 0,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq('id', editData.id)
           .eq('user_id', user.id);
 
@@ -119,18 +170,14 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
           }
         }
       } else {
+        const insertData: any = {
+          user_id: user.id,
+          ...updateData,
+        };
+
         const { data: insertedAccount, error: insertError } = await supabase
           .from('accounts')
-          .insert({
-            user_id: user.id,
-            name: formData.name,
-            account_type: formData.accountType,
-            institution: formData.institution || null,
-            current_balance: formData.currentBalance,
-            monthly_contribution: formData.monthlyContribution || 0,
-            units_held: formData.unitsHeld || 0,
-            dividend_rate: formData.dividendRate || 0,
-          })
+          .insert(insertData)
           .select()
           .single();
 
@@ -250,23 +297,31 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
               </select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-white text-opacity-95 mb-2">
-                  Current Balance (RM) *
-                </label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={formData.currentBalance || ''}
-                  onChange={(e) => setFormData({ ...formData, currentBalance: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-4 py-3 glass-card text-white placeholder-white placeholder-opacity-40 rounded-xl focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none transition-all"
-                  placeholder="10000"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-white text-opacity-95 mb-2">
+                Current Balance (RM) *
+              </label>
+              <input
+                type="number"
+                required
+                min="0"
+                step="0.01"
+                value={formData.currentBalance || ''}
+                onChange={(e) => setFormData({ ...formData, currentBalance: parseFloat(e.target.value) || 0 })}
+                className="w-full px-4 py-3 glass-card text-white placeholder-white placeholder-opacity-40 rounded-xl focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none transition-all"
+                placeholder="10000"
+              />
+            </div>
 
+            {formData.accountType === 'EPF' && userSalary > 0 && (
+              <EPFContributionSection
+                monthlySalary={userSalary}
+                onContributionChange={setEpfContribution}
+                initialData={epfContribution}
+              />
+            )}
+
+            {formData.accountType !== 'EPF' && (
               <div>
                 <label className="block text-sm font-medium text-white text-opacity-95 mb-2">
                   Monthly Contribution (RM)
@@ -281,7 +336,7 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
                   placeholder="500"
                 />
               </div>
-            </div>
+            )}
 
             {showASBFields && (
               <div>

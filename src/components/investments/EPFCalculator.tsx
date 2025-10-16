@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { PiggyBank, TrendingUp, AlertCircle, CheckCircle2, Calendar } from 'lucide-react';
+import { PiggyBank, TrendingUp, AlertCircle, CheckCircle2, Calendar, Settings } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
-import { calculateEPFProjection, DIVIDEND_RATES, EPF_BENCHMARKS, getEPFBenchmarkForAge } from '../../utils/investmentCalculators';
+import { calculateEPFProjection, DIVIDEND_RATES, getEPFBenchmarkForAge } from '../../utils/investmentCalculators';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { getEPFContributionSettings, calculateEPFContribution, getContributionExplanation } from '../../utils/epfContributionHelpers';
+import type { EPFContributionSettings } from '../../utils/epfContributionHelpers';
 
 interface EPFCalculatorProps {
   account: {
@@ -20,22 +22,31 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
   const [monthlySalary, setMonthlySalary] = useState<number>(5000);
   const [projection, setProjection] = useState<any>(null);
   const [editing, setEditing] = useState(false);
+  const [contributionSettings, setContributionSettings] = useState<EPFContributionSettings | null>(null);
+  const [contributionBreakdown, setContributionBreakdown] = useState<any>(null);
 
   useEffect(() => {
     loadUserProfile();
-  }, [user]);
+    loadContributionSettings();
+  }, [user, account.id]);
 
   useEffect(() => {
-    if (userAge && monthlySalary) {
+    if (userAge && monthlySalary && contributionSettings) {
+      const breakdown = calculateEPFContribution(monthlySalary, contributionSettings);
+      setContributionBreakdown(breakdown);
+
       const proj = calculateEPFProjection(
         account.current_balance,
         userAge,
         monthlySalary,
-        55
+        55,
+        contributionSettings.employeePercentage,
+        contributionSettings.employerPercentage,
+        contributionSettings.useTotal
       );
       setProjection(proj);
     }
-  }, [account, userAge, monthlySalary]);
+  }, [account, userAge, monthlySalary, contributionSettings]);
 
   const loadUserProfile = async () => {
     if (!user) return;
@@ -49,6 +60,12 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
       if (data.age) setUserAge(data.age);
       if (data.monthly_salary) setMonthlySalary(data.monthly_salary);
     }
+  };
+
+  const loadContributionSettings = async () => {
+    if (!user) return;
+    const settings = await getEPFContributionSettings(user.id, account.id);
+    setContributionSettings(settings);
   };
 
   const saveProfile = async () => {
@@ -142,12 +159,81 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
           <p className="text-sm font-medium text-white text-opacity-80 mb-2">Est. Annual Dividend</p>
           <p className="text-xl font-bold text-white">{formatCurrency(estimatedAnnualDividend)}</p>
         </div>
-
-        <div className="glass rounded-2xl p-4">
-          <p className="text-sm font-medium text-white text-opacity-80 mb-2">Monthly Contribution (11%)</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(monthlySalary * 0.11)}</p>
-        </div>
       </div>
+
+      {contributionBreakdown && contributionSettings && (
+        <div className="glass-strong rounded-2xl p-5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-semibold text-white">Monthly Contribution Breakdown</h4>
+            <div className="flex items-center gap-2 text-xs text-white text-opacity-70">
+              <Settings className="w-3 h-3" />
+              <span>{contributionSettings.source === 'account' ? 'Account-specific' : contributionSettings.source === 'profile' ? 'Profile default' : 'System default'}</span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {!contributionSettings.isManual ? (
+              <>
+                <div className="flex justify-between items-center">
+                  <span className="text-white text-opacity-80">
+                    Employee ({contributionSettings.employeePercentage}%)
+                  </span>
+                  <span className="font-semibold text-white">
+                    {formatCurrency(contributionBreakdown.employeeContribution)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white text-opacity-80">
+                    Employer ({contributionSettings.employerPercentage}%)
+                  </span>
+                  <span className="font-semibold text-white">
+                    {formatCurrency(contributionBreakdown.employerContribution)}
+                  </span>
+                </div>
+                <div className="pt-3 border-t border-white border-opacity-20">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-white">Total Contribution</span>
+                    <span className="font-bold text-white text-xl">
+                      {formatCurrency(contributionBreakdown.totalContribution)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-white text-opacity-70">Used in Projections</span>
+                    <span className="font-bold text-blue-400">
+                      {formatCurrency(contributionBreakdown.usedContribution)}
+                    </span>
+                  </div>
+                </div>
+                {!contributionSettings.useTotal && (
+                  <div className="glass rounded-lg p-3 mt-2">
+                    <p className="text-xs text-white text-opacity-80">
+                      Only employee contribution is used in retirement projections. Consider including employer contribution for more accurate planning.
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white text-opacity-80">Manual Amount</span>
+                  <span className="font-bold text-white text-xl">
+                    {formatCurrency(contributionBreakdown.usedContribution)}
+                  </span>
+                </div>
+                <p className="text-xs text-white text-opacity-70 mt-2">
+                  Using manually entered contribution amount
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-white border-opacity-20">
+            <p className="text-xs text-white text-opacity-70">
+              {getContributionExplanation(contributionSettings)}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="glass-strong rounded-2xl p-4 mb-6">
         <h4 className="font-semibold text-white mb-3">Historical Dividend Rates</h4>

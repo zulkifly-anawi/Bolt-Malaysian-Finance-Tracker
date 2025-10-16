@@ -95,17 +95,26 @@ export const calculateEPFProjection = (
   currentBalance: number,
   currentAge: number,
   monthlySalary: number,
-  retirementAge: number = 55
+  retirementAge: number = 55,
+  employeePercentage: number = 11,
+  employerPercentage: number = 12,
+  useTotal: boolean = true
 ): {
   projectedBalance: number;
   yearsToRetirement: number;
   benchmark: number;
   status: 'ahead' | 'on-track' | 'behind';
   additionalNeeded: number;
+  monthlyContribution: number;
+  employeeContribution: number;
+  employerContribution: number;
 } => {
   const yearsToRetirement = Math.max(0, retirementAge - currentAge);
   const avgRate = calculateAverageDividendRate('EPF') / 100;
-  const monthlyContribution = monthlySalary * 0.11;
+
+  const employeeContribution = monthlySalary * (employeePercentage / 100);
+  const employerContribution = monthlySalary * (employerPercentage / 100);
+  const monthlyContribution = useTotal ? (employeeContribution + employerContribution) : employeeContribution;
 
   let balance = currentBalance;
 
@@ -137,6 +146,9 @@ export const calculateEPFProjection = (
     benchmark,
     status,
     additionalNeeded,
+    monthlyContribution,
+    employeeContribution,
+    employerContribution,
   };
 };
 

@@ -7,6 +7,10 @@ export interface Profile {
   notifications_enabled: boolean;
   email_reminders_enabled: boolean;
   last_balance_update: string | null;
+  epf_employee_contribution_percentage: number;
+  epf_employer_contribution_percentage: number;
+  use_custom_epf_contribution: boolean;
+  include_employer_contribution: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -23,6 +27,10 @@ export interface Account {
   units_held: number;
   monthly_contribution: number;
   dividend_rate: number;
+  employee_contribution_percentage: number | null;
+  employer_contribution_percentage: number | null;
+  use_total_contribution: boolean;
+  is_manual_contribution: boolean;
   created_at: string;
   updated_at: string;
 }
