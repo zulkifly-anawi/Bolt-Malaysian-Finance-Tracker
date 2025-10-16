@@ -95,12 +95,12 @@ export const generateFinancialReportHTML = (
     .join('');
 
   const achievementsHTML = achievements
-    .filter(a => a.earned)
     .map(
       achievement => `
     <div style="padding: 12px; background: #f3f4f6; border-radius: 8px; margin-bottom: 8px;">
-      <strong>${achievement.name}</strong><br>
-      <small style="color: #6b7280;">${achievement.description}</small>
+      <strong>${achievement.achievement_name}</strong><br>
+      <small style="color: #6b7280;">${achievement.achievement_description || 'Achievement unlocked!'}</small><br>
+      <small style="color: #9ca3af;">Earned: ${formatDate(achievement.earned_at)}</small>
     </div>
   `
     )
@@ -202,7 +202,7 @@ export const generateFinancialReportHTML = (
       </div>
       <div class="metric">
         <div class="metric-label">Achievements Earned</div>
-        <div class="metric-value">${achievements.filter(a => a.earned).length}</div>
+        <div class="metric-value">${achievements.length}</div>
       </div>
     </div>
   </div>
@@ -248,7 +248,7 @@ export const generateFinancialReportHTML = (
 
   <div class="section">
     <h2>Achievements & Badges</h2>
-    ${achievements.filter(a => a.earned).length === 0 ? '<p style="color: #6b7280;">No achievements earned yet.</p>' : achievementsHTML}
+    ${achievements.length === 0 ? '<p style="color: #6b7280;">No achievements earned yet.</p>' : achievementsHTML}
   </div>
 
   <div style="margin-top: 40px; padding: 20px; background: #f3f4f6; border-radius: 12px; text-align: center; color: #6b7280; font-size: 14px;">

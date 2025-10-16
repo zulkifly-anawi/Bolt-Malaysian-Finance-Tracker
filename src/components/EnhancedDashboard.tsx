@@ -32,7 +32,7 @@ export const EnhancedDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [goals, setGoals] = useState<Goal[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [achievements] = useState<Achievement[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [showGoalTemplates, setShowGoalTemplates] = useState(false);
@@ -148,6 +148,14 @@ export const EnhancedDashboard = () => {
 
       if (accountsError) throw accountsError;
 
+      const { data: achievementsData, error: achievementsError } = await supabase
+        .from('user_achievements')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('earned_at', { ascending: false });
+
+      if (achievementsError) throw achievementsError;
+
       if (goalsWithAmounts) {
         const processedGoals = goalsWithAmounts.map((goal: any) => {
           let accountProgress = 0;
@@ -167,6 +175,7 @@ export const EnhancedDashboard = () => {
       }
 
       if (accountsData) setAccounts(accountsData);
+      if (achievementsData) setAchievements(achievementsData);
     } catch (err: any) {
       setError(err.message || 'Failed to load data. Please refresh the page.');
       console.error('Load data error:', err);

@@ -12,26 +12,62 @@ interface ExportDataProps {
 export const ExportData = ({ user, netWorth, goals, accounts, achievements }: ExportDataProps) => {
   // Generate formatted financial report and open in print-optimized window
   const handlePrint = () => {
-    // Generate the HTML report with all dashboard data
-    const reportHTML = generateFinancialReportHTML(user, netWorth, goals, accounts, achievements);
+    try {
+      // Generate the HTML report with all dashboard data
+      const reportHTML = generateFinancialReportHTML(user, netWorth, goals, accounts, achievements);
 
-    // Open report in a new window optimized for printing
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
+      // Try to open report in a new window optimized for printing
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
 
-    if (printWindow) {
+      if (!printWindow) {
+        // Pop-up was blocked - offer alternative download
+        const userConfirmed = window.confirm(
+          'Pop-up blocker detected. Would you like to download the report as an HTML file instead?'
+        );
+
+        if (userConfirmed) {
+          downloadFinancialReport(user, netWorth, goals, accounts, achievements);
+        } else {
+          alert('Please allow pop-ups for this site and try again, or use the "Financial Report (HTML)" button to download the report.');
+        }
+        return;
+      }
+
+      // Write content to the new window
       printWindow.document.write(reportHTML);
       printWindow.document.close();
 
       // Wait for content to load, then trigger print dialog
-      printWindow.onload = () => {
-        printWindow.focus();
-        printWindow.print();
+      // Using setTimeout as fallback if onload doesn't fire
+      let printTriggered = false;
 
-        // Close window after printing or if user cancels
-        printWindow.onafterprint = () => {
-          printWindow.close();
-        };
+      const triggerPrint = () => {
+        if (!printTriggered && printWindow && !printWindow.closed) {
+          printTriggered = true;
+          try {
+            printWindow.focus();
+            printWindow.print();
+
+            // Close window after printing or if user cancels
+            printWindow.onafterprint = () => {
+              printWindow.close();
+            };
+          } catch (err) {
+            console.error('Print error:', err);
+            printWindow.close();
+            alert('Unable to print. Please try downloading the report instead.');
+          }
+        }
       };
+
+      printWindow.onload = triggerPrint;
+
+      // Fallback timeout in case onload doesn't fire
+      setTimeout(triggerPrint, 250);
+
+    } catch (error) {
+      console.error('Error generating print report:', error);
+      alert('An error occurred while preparing the report. Please try the "Financial Report (HTML)" download option instead.');
     }
   };
 
