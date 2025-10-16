@@ -106,7 +106,7 @@ export const EnhancedDashboard = () => {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex gap-2 mb-6 overflow-x-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-2 mb-6">
           {[
             { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
             { id: 'goals', label: 'Goals', icon: Target },
@@ -119,7 +119,7 @@ export const EnhancedDashboard = () => {
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-all ${
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
                 activeTab === id ? 'glass-button text-white' : 'glass text-white text-opacity-80 hover:text-opacity-100'
               }`}
             >
