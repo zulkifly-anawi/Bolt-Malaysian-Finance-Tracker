@@ -1,5 +1,6 @@
-import { Download, FileText, FileSpreadsheet, Printer } from 'lucide-react';
-import { exportGoalsToCSV, exportAccountsToCSV, downloadFinancialReport, generateFinancialReportHTML } from '../../utils/exportData';
+import { useState } from 'react';
+import { Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { exportGoalsToCSV, exportAccountsToCSV, downloadFinancialReport, exportComprehensiveDashboardJSON } from '../../utils/exportData';
 
 interface ExportDataProps {
   user: any;
@@ -10,64 +11,32 @@ interface ExportDataProps {
 }
 
 export const ExportData = ({ user, netWorth, goals, accounts, achievements }: ExportDataProps) => {
-  // Generate formatted financial report and open in print-optimized window
-  const handlePrint = () => {
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  const handleJSONExport = async () => {
+    setIsExporting(true);
+    setExportStatus(null);
+
     try {
-      // Generate the HTML report with all dashboard data
-      const reportHTML = generateFinancialReportHTML(user, netWorth, goals, accounts, achievements);
+      const result = await exportComprehensiveDashboardJSON(user, netWorth, goals, accounts, achievements);
 
-      // Try to open report in a new window optimized for printing
-      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      setExportStatus({
+        type: 'success',
+        message: `Successfully exported ${result.recordCount} records to ${result.filename}`
+      });
 
-      if (!printWindow) {
-        // Pop-up was blocked - offer alternative download
-        const userConfirmed = window.confirm(
-          'Pop-up blocker detected. Would you like to download the report as an HTML file instead?'
-        );
+      setTimeout(() => setExportStatus(null), 5000);
+    } catch (error: any) {
+      console.error('JSON export error:', error);
+      setExportStatus({
+        type: 'error',
+        message: error.message || 'Failed to export data. Please try again.'
+      });
 
-        if (userConfirmed) {
-          downloadFinancialReport(user, netWorth, goals, accounts, achievements);
-        } else {
-          alert('Please allow pop-ups for this site and try again, or use the "Financial Report (HTML)" button to download the report.');
-        }
-        return;
-      }
-
-      // Write content to the new window
-      printWindow.document.write(reportHTML);
-      printWindow.document.close();
-
-      // Wait for content to load, then trigger print dialog
-      // Using setTimeout as fallback if onload doesn't fire
-      let printTriggered = false;
-
-      const triggerPrint = () => {
-        if (!printTriggered && printWindow && !printWindow.closed) {
-          printTriggered = true;
-          try {
-            printWindow.focus();
-            printWindow.print();
-
-            // Close window after printing or if user cancels
-            printWindow.onafterprint = () => {
-              printWindow.close();
-            };
-          } catch (err) {
-            console.error('Print error:', err);
-            printWindow.close();
-            alert('Unable to print. Please try downloading the report instead.');
-          }
-        }
-      };
-
-      printWindow.onload = triggerPrint;
-
-      // Fallback timeout in case onload doesn't fire
-      setTimeout(triggerPrint, 250);
-
-    } catch (error) {
-      console.error('Error generating print report:', error);
-      alert('An error occurred while preparing the report. Please try the "Financial Report (HTML)" download option instead.');
+      setTimeout(() => setExportStatus(null), 5000);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -142,24 +111,43 @@ export const ExportData = ({ user, netWorth, goals, accounts, achievements }: Ex
         </button>
 
         <button
-          onClick={handlePrint}
-          className="glass-card rounded-3xl p-6 border-2 border-orange-400 border-opacity-20 hover:border-opacity-50 hover:glow transition-all text-left group liquid-shine"
+          onClick={handleJSONExport}
+          disabled={isExporting}
+          className="glass-card rounded-3xl p-6 border-2 border-emerald-400 border-opacity-20 hover:border-opacity-50 hover:glow transition-all text-left group liquid-shine disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-orange-600 group-hover:bg-orange-500 rounded-xl flex items-center justify-center transition-colors shadow-lg">
-              <Printer className="w-6 h-6 text-white transition-colors" />
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 group-hover:from-emerald-400 group-hover:to-green-500 rounded-xl flex items-center justify-center transition-colors shadow-lg">
+              {isExporting ? (
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+              ) : (
+                <Download className="w-6 h-6 text-white transition-colors" />
+              )}
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-white mb-1 group-hover:text-orange-400 transition-colors">
-                Print Dashboard
+              <h3 className="font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">
+                {isExporting ? 'Exporting...' : 'Export All Data (JSON)'}
               </h3>
               <p className="text-sm text-white text-opacity-70">
-                Generate and print a formatted financial report
+                Download complete dashboard data with history and projections
               </p>
             </div>
           </div>
         </button>
       </div>
+
+      {exportStatus && (
+        <div className={`glass-strong rounded-2xl p-4 mb-4 border-2 ${
+          exportStatus.type === 'success'
+            ? 'border-green-400 border-opacity-30'
+            : 'border-red-400 border-opacity-30'
+        }`}>
+          <p className={`text-sm ${
+            exportStatus.type === 'success' ? 'text-green-200' : 'text-red-200'
+          }`}>
+            {exportStatus.message}
+          </p>
+        </div>
+      )}
 
       <div className="glass-strong rounded-3xl p-6 liquid-shine">
         <h3 className="font-bold text-white mb-4">What's Included in Exports</h3>
@@ -179,7 +167,13 @@ export const ExportData = ({ user, netWorth, goals, accounts, achievements }: Ex
           <div className="flex items-start gap-3">
             <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
             <div>
-              <strong className="text-white">Financial Report:</strong> Complete overview including net worth, goals, accounts, and achievements in a formatted HTML document
+              <strong className="text-white">Financial Report (HTML):</strong> Complete overview including net worth, goals, accounts, and achievements in a formatted HTML document
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-2 h-2 bg-emerald-400 rounded-full mt-2"></div>
+            <div>
+              <strong className="text-white">Complete Data Export (JSON):</strong> Comprehensive export including all accounts with historical balances, all goals with progress tracking and projections, investment-specific projections (ASB, EPF, Tabung Haji), achievements, complete balance history, goal progress timeline, and export metadata. Perfect for data backup, analysis, or migration.
             </div>
           </div>
         </div>

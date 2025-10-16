@@ -1,4 +1,6 @@
 import { formatCurrency, formatDate } from './formatters';
+import { supabase } from '../lib/supabase';
+import { calculateGoalProjection, calculateASBProjection, calculateEPFProjection, calculateTabungHajiProjection, HAJJ_COST_2025 } from './investmentCalculators';
 
 export const exportToCSV = (data: any[], filename: string) => {
   if (data.length === 0) return;
@@ -295,4 +297,301 @@ export const exportAllData = (goals: any[], accounts: any[], balanceEntries: any
   exportGoalsToCSV(goals);
   setTimeout(() => exportAccountsToCSV(accounts), 500);
   setTimeout(() => exportBalanceHistoryToCSV(balanceEntries), 1000);
+};
+
+export const exportToJSON = (data: any, filename: string) => {
+  try {
+    const jsonContent = JSON.stringify(data, null, 2);
+    downloadFile(jsonContent, filename, 'application/json');
+  } catch (error) {
+    console.error('Error exporting to JSON:', error);
+    throw new Error('Failed to generate JSON file');
+  }
+};
+
+const fetchBalanceHistory = async (userId: string, accountIds: string[]) => {
+  try {
+    if (accountIds.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('balance_entries')
+      .select('*')
+      .eq('user_id', userId)
+      .in('account_id', accountIds)
+      .order('entry_date', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching balance history:', error);
+    return [];
+  }
+};
+
+const fetchGoalProgressHistory = async (userId: string, goalIds: string[]) => {
+  try {
+    if (goalIds.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('goal_progress_history')
+      .select('*')
+      .eq('user_id', userId)
+      .in('goal_id', goalIds)
+      .order('recorded_at', { ascending: false });
+
+    if (error) {
+      console.warn('Goal progress history table may not exist:', error);
+      return [];
+    }
+    return data || [];
+  } catch (error) {
+    console.warn('Error fetching goal progress history:', error);
+    return [];
+  }
+};
+
+const fetchAccountGoalAllocations = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('account_goals')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching account goal allocations:', error);
+    return [];
+  }
+};
+
+const calculateAllGoalProjections = (goals: any[]) => {
+  return goals.map(goal => {
+    try {
+      const monthlyContribution = 500;
+      const projection = calculateGoalProjection(
+        goal.current_amount || 0,
+        goal.target_amount,
+        goal.target_date,
+        monthlyContribution
+      );
+
+      const now = new Date();
+      const target = new Date(goal.target_date);
+      const monthsRemaining = Math.max(1, Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+      const progressPercentage = ((goal.current_amount || 0) / goal.target_amount) * 100;
+
+      return {
+        goal_id: goal.id,
+        goal_name: goal.name,
+        projection: {
+          monthly_savings_needed: projection.monthlyNeeded,
+          projected_completion_date: projection.projectedCompletionDate,
+          status: projection.status,
+          difference_from_target: projection.difference,
+          months_remaining: monthsRemaining,
+          progress_percentage: progressPercentage,
+          current_amount: goal.current_amount || 0,
+          target_amount: goal.target_amount,
+          is_on_track: projection.status === 'on-track' || projection.status === 'ahead'
+        }
+      };
+    } catch (error) {
+      console.error(`Error calculating projection for goal ${goal.id}:`, error);
+      return {
+        goal_id: goal.id,
+        goal_name: goal.name,
+        projection: null,
+        error: 'Failed to calculate projection'
+      };
+    }
+  });
+};
+
+const calculateInvestmentProjections = (accounts: any[]) => {
+  const projections: any = {
+    asb: [],
+    epf: [],
+    tabung_haji: []
+  };
+
+  accounts.forEach(account => {
+    try {
+      if (account.account_type === 'ASB') {
+        const asbProjection = calculateASBProjection(
+          account.current_balance,
+          account.asb_units_held || 0,
+          account.monthly_contribution || 0,
+          5
+        );
+        projections.asb.push({
+          account_id: account.id,
+          account_name: account.name,
+          current_balance: account.current_balance,
+          units_held: account.asb_units_held || 0,
+          monthly_contribution: account.monthly_contribution || 0,
+          five_year_projection: {
+            projected_balance: asbProjection.projectedBalance,
+            total_dividends: asbProjection.totalDividends,
+            total_contributions: asbProjection.totalContributions
+          }
+        });
+      } else if (account.account_type === 'EPF') {
+        const epfProjection = calculateEPFProjection(
+          account.current_balance,
+          account.epf_age || 30,
+          account.epf_monthly_salary || 0,
+          55,
+          11,
+          12,
+          true
+        );
+        projections.epf.push({
+          account_id: account.id,
+          account_name: account.name,
+          current_balance: account.current_balance,
+          current_age: account.epf_age || 30,
+          monthly_salary: account.epf_monthly_salary || 0,
+          retirement_projection: {
+            projected_balance_at_55: epfProjection.projectedBalance,
+            years_to_retirement: epfProjection.yearsToRetirement,
+            retirement_benchmark: epfProjection.benchmark,
+            status: epfProjection.status,
+            additional_needed: epfProjection.additionalNeeded,
+            monthly_contribution: epfProjection.monthlyContribution
+          }
+        });
+      } else if (account.account_type === 'Tabung Haji') {
+        const thProjection = calculateTabungHajiProjection(
+          account.current_balance,
+          account.monthly_contribution || 0,
+          HAJJ_COST_2025
+        );
+        projections.tabung_haji.push({
+          account_id: account.id,
+          account_name: account.name,
+          current_balance: account.current_balance,
+          monthly_contribution: account.monthly_contribution || 0,
+          hajj_projection: {
+            years_to_hajj: thProjection.yearsToHajj,
+            projected_balance: thProjection.projectedBalance,
+            hajj_cost_target: HAJJ_COST_2025,
+            shortfall: thProjection.shortfall
+          }
+        });
+      }
+    } catch (error) {
+      console.error(`Error calculating projection for account ${account.id}:`, error);
+    }
+  });
+
+  return projections;
+};
+
+export const exportComprehensiveDashboardJSON = async (
+  user: any,
+  netWorth: number,
+  goals: any[],
+  accounts: any[],
+  achievements: any[]
+) => {
+  try {
+    if (!user) throw new Error('User information is required');
+
+    const exportTimestamp = new Date().toISOString();
+    const accountIds = accounts.map(a => a.id);
+    const goalIds = goals.map(g => g.id);
+
+    const [balanceHistory, goalProgressHistory, accountGoalAllocations] = await Promise.all([
+      fetchBalanceHistory(user.id, accountIds),
+      fetchGoalProgressHistory(user.id, goalIds),
+      fetchAccountGoalAllocations(user.id)
+    ]);
+
+    const goalProjections = calculateAllGoalProjections(goals);
+    const investmentProjections = calculateInvestmentProjections(accounts);
+
+    const groupedBalanceHistory: Record<string, any[]> = {};
+    accountIds.forEach(id => {
+      groupedBalanceHistory[id] = balanceHistory.filter(entry => entry.account_id === id);
+    });
+
+    const groupedProgressHistory: Record<string, any[]> = {};
+    goalIds.forEach(id => {
+      groupedProgressHistory[id] = goalProgressHistory.filter(entry => entry.goal_id === id);
+    });
+
+    const enhancedAccounts = accounts.map(account => ({
+      ...account,
+      balance_history: groupedBalanceHistory[account.id] || [],
+      balance_history_count: (groupedBalanceHistory[account.id] || []).length
+    }));
+
+    const enhancedGoals = goals.map(goal => {
+      const allocations = accountGoalAllocations.filter(a => a.goal_id === goal.id);
+      const projection = goalProjections.find(p => p.goal_id === goal.id);
+      const progressHistory = groupedProgressHistory[goal.id] || [];
+
+      return {
+        ...goal,
+        account_allocations: allocations.map(alloc => ({
+          account_id: alloc.account_id,
+          allocation_percentage: alloc.allocation_percentage,
+          account_name: accounts.find(a => a.id === alloc.account_id)?.name || 'Unknown'
+        })),
+        projection: projection?.projection || null,
+        progress_history: progressHistory,
+        progress_history_count: progressHistory.length
+      };
+    });
+
+    const exportData = {
+      metadata: {
+        export_version: '1.0',
+        export_timestamp: exportTimestamp,
+        dashboard_name: 'Malaysian Finance Tracker',
+        exported_by: user.email,
+        user_id: user.id,
+        record_counts: {
+          total_accounts: accounts.length,
+          total_goals: goals.length,
+          active_goals: goals.filter(g => !g.is_achieved).length,
+          achieved_goals: goals.filter(g => g.is_achieved).length,
+          total_achievements: achievements.length,
+          total_balance_entries: balanceHistory.length,
+          total_goal_progress_entries: goalProgressHistory.length
+        }
+      },
+      financial_overview: {
+        total_net_worth: netWorth,
+        total_accounts: accounts.length,
+        total_goals: goals.length,
+        active_goals_count: goals.filter(g => !g.is_achieved).length,
+        achieved_goals_count: goals.filter(g => g.is_achieved).length,
+        total_achievements: achievements.length
+      },
+      accounts: enhancedAccounts,
+      goals: enhancedGoals,
+      achievements: achievements,
+      investment_projections: investmentProjections,
+      goal_projections: goalProjections,
+      balance_history_summary: {
+        total_entries: balanceHistory.length,
+        oldest_entry: balanceHistory.length > 0 ? balanceHistory[balanceHistory.length - 1]?.entry_date : null,
+        newest_entry: balanceHistory.length > 0 ? balanceHistory[0]?.entry_date : null
+      }
+    };
+
+    const filename = `malaysian-finance-tracker-${new Date().toISOString().split('T')[0]}.json`;
+    exportToJSON(exportData, filename);
+
+    return {
+      success: true,
+      recordCount: balanceHistory.length + goals.length + accounts.length + achievements.length,
+      filename
+    };
+  } catch (error: any) {
+    console.error('Error exporting comprehensive dashboard JSON:', error);
+    throw new Error(error.message || 'Failed to export dashboard data');
+  }
 };
