@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Bell, BellOff, CheckCircle, AlertCircle, TrendingUp, Calendar, X, Settings } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Bell, BellOff, CheckCircle, AlertCircle, TrendingUp, Calendar, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatDate } from '../../utils/formatters';
@@ -19,6 +19,8 @@ export const NotificationsPanel = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showPanel, setShowPanel] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [alignLeft, setAlignLeft] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -26,6 +28,34 @@ export const NotificationsPanel = () => {
       setupRealtimeSubscription();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (showPanel) {
+      checkDropdownPosition();
+    }
+  }, [showPanel]);
+
+  useEffect(() => {
+    if (showPanel) {
+      const handleResize = () => checkDropdownPosition();
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, [showPanel]);
+
+  const checkDropdownPosition = () => {
+    if (!buttonRef.current) return;
+
+    const buttonRect = buttonRef.current.getBoundingClientRect();
+    const dropdownWidth = window.innerWidth < 640 ? window.innerWidth - 32 : 384;
+    const spaceOnRight = window.innerWidth - buttonRect.right;
+
+    if (spaceOnRight < dropdownWidth) {
+      setAlignLeft(true);
+    } else {
+      setAlignLeft(false);
+    }
+  };
 
   const loadNotifications = async () => {
     if (!user) return;
@@ -116,6 +146,7 @@ export const NotificationsPanel = () => {
   return (
     <div className="relative">
       <button
+        ref={buttonRef}
         onClick={() => setShowPanel(!showPanel)}
         className="relative p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
       >
@@ -133,7 +164,9 @@ export const NotificationsPanel = () => {
             className="fixed inset-0 z-40"
             onClick={() => setShowPanel(false)}
           />
-          <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-h-[70vh] sm:max-h-[600px] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden flex flex-col">
+          <div className={`absolute mt-2 w-[calc(100vw-2rem)] sm:w-96 max-h-[70vh] sm:max-h-[600px] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden flex flex-col transition-all origin-top-right ${
+            alignLeft ? 'right-0' : 'right-0'
+          }`}>
             <div className="p-3 sm:p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-teal-50 to-cyan-50">
               <h3 className="font-bold text-gray-900 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
                 <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" />
