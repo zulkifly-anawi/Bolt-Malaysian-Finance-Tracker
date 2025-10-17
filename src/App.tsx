@@ -36,7 +36,7 @@ function AppContent() {
                     onClick={() => setAuthView('landing')}
                     className="text-xl font-bold text-white hover:text-opacity-80 transition-colors"
                   >
-                    Financial Tracker
+                    Malaysian Financial Tracker
                   </button>
                   <button
                     onClick={() => setAuthView('login')}
@@ -63,7 +63,7 @@ function AppContent() {
             <nav className="glass-strong shadow-2xl sticky top-0 z-50 backdrop-blur-xl">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
-                  <div className="text-xl font-bold text-white">Financial Tracker</div>
+                  <div className="text-xl font-bold text-white">Malaysian Financial Tracker</div>
                   <button
                     onClick={() => setAuthView('login')}
                     className="px-6 py-2 glass-button text-white rounded-xl font-semibold"
@@ -77,7 +77,7 @@ function AppContent() {
             <footer className="glass-strong mt-12 py-6">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-white text-opacity-70 text-sm">
-                  <p>© 2025 Financial Tracker. Built for Malaysians.</p>
+                  <p>© 2025 Malaysian Financial Tracker</p>
                   <div className="flex gap-6">
                     <button
                       onClick={() => setAuthView('privacy')}
