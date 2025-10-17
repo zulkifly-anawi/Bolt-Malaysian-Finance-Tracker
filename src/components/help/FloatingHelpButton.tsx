@@ -4,6 +4,7 @@ import { HelpCircle, X, Lightbulb } from 'lucide-react';
 interface FloatingHelpButtonProps {
   activeTab: string;
   onOpenHelp: () => void;
+  onOpenFeedback: () => void;
 }
 
 const contextualTips: Record<string, { title: string; tips: string[] }> = {
@@ -63,7 +64,7 @@ const contextualTips: Record<string, { title: string; tips: string[] }> = {
   },
 };
 
-export const FloatingHelpButton = ({ activeTab, onOpenHelp }: FloatingHelpButtonProps) => {
+export const FloatingHelpButton = ({ activeTab, onOpenHelp, onOpenFeedback }: FloatingHelpButtonProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const tips = contextualTips[activeTab] || contextualTips.dashboard;
@@ -102,6 +103,16 @@ export const FloatingHelpButton = ({ activeTab, onOpenHelp }: FloatingHelpButton
             className="w-full mt-4 px-4 py-2 glass rounded-xl text-white text-sm font-semibold hover:bg-white hover:bg-opacity-10 transition-all"
           >
             Open Help Center
+          </button>
+          <button
+            onClick={() => {
+              setIsExpanded(false);
+              onOpenFeedback();
+            }}
+            className="w-full mt-2 px-4 py-2 glass rounded-xl text-white text-sm font-semibold hover:bg-white hover:bg-opacity-10 transition-all"
+            aria-label="Navigate to feedback form"
+          >
+            Provide Your Feedback
           </button>
         </div>
       )}

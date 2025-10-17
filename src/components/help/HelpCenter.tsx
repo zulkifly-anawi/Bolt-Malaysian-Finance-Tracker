@@ -215,7 +215,7 @@ export const HelpCenter = () => {
         )}
       </div>
 
-      <div className="mt-12">
+      <div id="feedback-form" className="mt-12">
         <FeedbackForm />
       </div>
     </div>

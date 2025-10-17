@@ -586,6 +586,15 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
         <FloatingHelpButton
           activeTab={activeTab}
           onOpenHelp={() => setActiveTab('help')}
+          onOpenFeedback={() => {
+            setActiveTab('help');
+            setTimeout(() => {
+              const feedbackElement = document.getElementById('feedback-form');
+              if (feedbackElement) {
+                feedbackElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }, 100);
+          }}
         />
 
         {showOnboarding && (
