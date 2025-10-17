@@ -200,9 +200,8 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
       <nav className="glass border-b border-white border-opacity-20 sticky top-0 z-20 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-16 gap-2 sm:gap-4">
-            <h1 className="text-base sm:text-lg md:text-xl font-bold text-white drop-shadow-lg truncate flex-shrink min-w-0">
-              <span className="hidden sm:inline">Malaysian Finance Tracker</span>
-              <span className="sm:hidden">Finance Tracker</span>
+            <h1 className="text-sm sm:text-lg md:text-xl font-bold text-white drop-shadow-lg truncate flex-shrink min-w-0">
+              Malaysian Finance Tracker
             </h1>
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <NotificationsPanel />
