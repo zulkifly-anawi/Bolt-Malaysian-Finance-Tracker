@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle, HelpCircle, Shield, X, Edit2 } from 'lucide-react';
+import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle, HelpCircle, Shield, X, Edit2, BookOpen } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 import { ASBCalculator } from './investments/ASBCalculator';
 import { TabungHajiTracker } from './investments/TabungHajiTracker';
@@ -214,7 +214,7 @@ export const EnhancedDashboard = () => {
             { id: 'accounts', label: 'Accounts', icon: Wallet },
             { id: 'insights', label: 'Insights', icon: Lightbulb },
             { id: 'achievements', label: 'Achievements', icon: Trophy },
-            { id: 'tips', label: 'Tips', icon: Lightbulb },
+            { id: 'tips', label: 'Tips', icon: BookOpen },
             { id: 'export', label: 'Export', icon: Download },
             { id: 'help', label: 'Help', icon: HelpCircle },
             { id: 'privacy', label: 'Privacy', icon: Shield },

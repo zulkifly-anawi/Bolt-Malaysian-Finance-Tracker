@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Lightbulb, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Target, DollarSign } from 'lucide-react';
+import { Lightbulb, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Target, DollarSign, BookOpen } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency } from '../../utils/formatters';
@@ -195,8 +195,8 @@ export const InsightsTips = ({ netWorth, accounts, goals }: InsightsTipsProps) =
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-          <Lightbulb className="w-6 h-6 text-white" />
+        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
+          <BookOpen className="w-6 h-6 text-white" />
         </div>
         <div>
           <h2 className="text-2xl font-bold text-white">Insights & Tips</h2>
