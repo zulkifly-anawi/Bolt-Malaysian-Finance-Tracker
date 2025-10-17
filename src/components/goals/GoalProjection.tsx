@@ -31,35 +31,23 @@ export const GoalProjection = ({
   const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState<'right' | 'left'>('right');
-  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (showMenu && menuButtonRef.current) {
+    if (showMenu && menuButtonRef.current && menuRef.current) {
       const buttonRect = menuButtonRef.current.getBoundingClientRect();
       const menuWidth = 192;
       const viewportWidth = window.innerWidth;
       const spaceOnRight = viewportWidth - buttonRect.right;
 
-      let left: number;
-      let right: number | undefined;
-
-      if (spaceOnRight < menuWidth + 16 && buttonRect.left > menuWidth + 16) {
+      if (spaceOnRight < menuWidth && buttonRect.left > menuWidth) {
         setMenuPosition('left');
-        right = viewportWidth - buttonRect.right;
       } else {
         setMenuPosition('right');
-        left = buttonRect.left;
       }
-
-      setMenuStyle({
-        top: buttonRect.bottom + 8,
-        left: menuPosition === 'right' ? left! : undefined,
-        right: menuPosition === 'left' ? right : undefined,
-      });
     }
-  }, [showMenu, menuPosition]);
+  }, [showMenu]);
 
   const handleQuickEditSuccess = () => {
     setShowQuickEdit(false);
@@ -124,13 +112,12 @@ export const GoalProjection = ({
               {showMenu && (
                 <>
                   <div
-                    className="fixed inset-0 z-30"
+                    className="fixed inset-0 z-10"
                     onClick={() => setShowMenu(false)}
                   />
                   <div
                     ref={menuRef}
-                    style={menuStyle}
-                    className="fixed w-48 glass-strong rounded-xl shadow-lg z-40 overflow-hidden animate-fade-in"
+                    className={`absolute ${menuPosition === 'right' ? 'right-0' : 'left-0'} mt-2 w-48 glass-strong rounded-xl shadow-lg z-20 overflow-hidden animate-fade-in`}
                   >
                     <button
                       onClick={() => {
