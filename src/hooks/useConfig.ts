@@ -171,7 +171,7 @@ export function useAdminAuth() {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
 
-      if (!user) {
+      if (!user || !user.email) {
         setIsAdmin(false);
         return;
       }
@@ -182,7 +182,10 @@ export function useAdminAuth() {
         .eq('id', user.id)
         .maybeSingle();
 
-      setIsAdmin(data?.is_admin || false);
+      const hasAdminFlag = data?.is_admin || false;
+      const hasAuthorizedEmail = user.email.toLowerCase() === 'zulkifly.anawi@gmail.com';
+
+      setIsAdmin(hasAdminFlag && hasAuthorizedEmail);
     } catch (error) {
       console.error('Failed to check admin status:', error);
       setIsAdmin(false);

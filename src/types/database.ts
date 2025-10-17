@@ -11,6 +11,8 @@ export interface Profile {
   epf_employer_contribution_percentage: number;
   use_custom_epf_contribution: boolean;
   include_employer_contribution: boolean;
+  is_admin: boolean;
+  onboarding_completed: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AdminLayout } from './AdminLayout';
 import { AccountConfigPage } from './pages/AccountConfigPage';
 import { GoalConfigPage } from './pages/GoalConfigPage';
@@ -34,7 +34,7 @@ export const AdminDashboard = ({ onExitAdmin }: AdminDashboardProps) => {
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
           <p className="text-white/70 mb-6">
-            You don't have permission to access the admin panel.
+            This admin panel is restricted to authorized administrators only.
           </p>
           <button
             onClick={onExitAdmin}
@@ -55,7 +55,7 @@ export const AdminDashboard = ({ onExitAdmin }: AdminDashboardProps) => {
         return <GoalConfigPage />;
       case 'dashboard':
       default:
-        return <DashboardOverview onNavigate={setCurrentPage} />;
+        return <DashboardOverview onNavigate={(page) => setCurrentPage(page as AdminPage)} />;
     }
   };
 
