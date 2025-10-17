@@ -61,7 +61,7 @@ Before you begin, ensure you have:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/malaysian-finance-tracker.git
+git clone https://github.com/YOUR_USERNAME/malaysian-finance-tracker.git
 cd malaysian-finance-tracker
 ```
 

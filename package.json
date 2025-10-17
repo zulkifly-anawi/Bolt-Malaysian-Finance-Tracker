@@ -1,7 +1,10 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "malaysian-finance-tracker",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "A comprehensive financial tracking platform built specifically for Malaysians to manage their investments, savings, and financial goals",
+  "author": "Malaysian Finance Tracker Team",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

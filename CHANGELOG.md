@@ -142,4 +142,4 @@ See [README.md](README.md#roadmap) for planned features in upcoming releases.
 
 ---
 
-[1.0.0]: https://github.com/yourusername/malaysian-finance-tracker/releases/tag/v1.0.0
+[1.0.0]: https://github.com/YOUR_USERNAME/malaysian-finance-tracker/releases/tag/v1.0.0

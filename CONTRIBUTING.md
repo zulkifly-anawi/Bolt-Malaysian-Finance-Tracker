@@ -42,7 +42,7 @@ Feature suggestions are welcome! Please:
 
 ```bash
 # Fork and clone the repository
-git clone https://github.com/yourusername/malaysian-finance-tracker.git
+git clone https://github.com/YOUR_USERNAME/malaysian-finance-tracker.git
 cd malaysian-finance-tracker
 
 # Install dependencies
