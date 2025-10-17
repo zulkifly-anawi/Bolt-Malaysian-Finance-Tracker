@@ -67,14 +67,18 @@ export const calculateASBProjection = (
 export const calculateTabungHajiProjection = (
   currentBalance: number,
   monthlyContribution: number,
-  targetAmount: number = HAJJ_COST_2025
+  targetAmount?: number,
+  pilgrimageType: 'Hajj' | 'Umrah' | null = 'Hajj'
 ): { yearsToHajj: number; projectedBalance: number; shortfall: number } => {
+  const defaultTarget = pilgrimageType === 'Umrah' ? UMRAH_COST : HAJJ_COST_2025;
+  const finalTarget = targetAmount ?? defaultTarget;
+
   const avgRate = calculateAverageDividendRate('Tabung Haji') / 100;
   let balance = currentBalance;
   let years = 0;
   const maxYears = 30;
 
-  while (balance < targetAmount && years < maxYears) {
+  while (balance < finalTarget && years < maxYears) {
     const annualContribution = monthlyContribution * 12;
     balance += annualContribution;
 
@@ -85,9 +89,9 @@ export const calculateTabungHajiProjection = (
   }
 
   return {
-    yearsToHajj: balance >= targetAmount ? years : maxYears,
+    yearsToHajj: balance >= finalTarget ? years : maxYears,
     projectedBalance: balance,
-    shortfall: Math.max(0, targetAmount - currentBalance),
+    shortfall: Math.max(0, finalTarget - currentBalance),
   };
 };
 

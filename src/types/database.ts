@@ -31,6 +31,7 @@ export interface Account {
   employer_contribution_percentage: number | null;
   use_total_contribution: boolean;
   is_manual_contribution: boolean;
+  pilgrimage_goal_type: 'Hajj' | 'Umrah' | null;
   created_at: string;
   updated_at: string;
 }

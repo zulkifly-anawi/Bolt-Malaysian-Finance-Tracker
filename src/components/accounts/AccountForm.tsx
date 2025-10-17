@@ -54,6 +54,7 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
     monthlyContribution: editData?.monthly_contribution || 0,
     unitsHeld: editData?.units_held || 0,
     dividendRate: editData?.dividend_rate || 0,
+    pilgrimageGoalType: editData?.pilgrimage_goal_type || 'Hajj',
     age: 0,
     monthlySalary: 0,
   });
@@ -172,6 +173,7 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
         current_balance: formData.currentBalance,
         units_held: formData.unitsHeld || 0,
         dividend_rate: formData.dividendRate || 0,
+        pilgrimage_goal_type: formData.accountType === 'Tabung Haji' ? formData.pilgrimageGoalType : null,
         updated_at: new Date().toISOString(),
       };
 
@@ -341,6 +343,29 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
                 ))}
               </select>
             </div>
+
+            {formData.accountType === 'Tabung Haji' && (
+              <div>
+                <label className="block text-sm font-medium text-white text-opacity-95 mb-2">
+                  Pilgrimage Goal *
+                </label>
+                <select
+                  required
+                  value={formData.pilgrimageGoalType}
+                  onChange={(e) => setFormData({ ...formData, pilgrimageGoalType: e.target.value as 'Hajj' | 'Umrah' })}
+                  className="w-full px-4 py-3 glass-card text-white rounded-xl focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none transition-all"
+                >
+                  <option value="Hajj" className="bg-gray-800">Hajj (RM 45,000 per person)</option>
+                  <option value="Umrah" className="bg-gray-800">Umrah (RM 15,000 per person)</option>
+                </select>
+                <div className="flex items-start gap-2 mt-2">
+                  <Info className="w-4 h-4 text-white text-opacity-60 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-white text-opacity-60">
+                    Select your pilgrimage goal. This will be used to calculate projections and track your progress.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {formData.accountType === 'EPF' && (
               <>
