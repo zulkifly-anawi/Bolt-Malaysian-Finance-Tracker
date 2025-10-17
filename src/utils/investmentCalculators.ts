@@ -259,7 +259,8 @@ export const calculateGoalProjection = (
   currentAmount: number,
   targetAmount: number,
   targetDate: string,
-  monthlyContribution: number = 0
+  monthlyContribution: number = 0,
+  createdAt?: string
 ): {
   monthlyNeeded: number;
   projectedCompletionDate: string;
@@ -284,9 +285,28 @@ export const calculateGoalProjection = (
 
   let status: 'ahead' | 'on-track' | 'behind';
   const progress = (currentAmount / targetAmount) * 100;
-  const timeProgress = ((Date.now() - new Date(target.getTime() - 365 * 24 * 60 * 60 * 1000).getTime()) / (target.getTime() - new Date(target.getTime() - 365 * 24 * 60 * 60 * 1000).getTime())) * 100;
 
-  if (progress >= timeProgress * 1.1) {
+  let timeProgress: number;
+  if (createdAt) {
+    const created = new Date(createdAt);
+    const totalDuration = target.getTime() - created.getTime();
+    const elapsedDuration = now.getTime() - created.getTime();
+
+    if (totalDuration > 0) {
+      timeProgress = Math.max(0, Math.min(100, (elapsedDuration / totalDuration) * 100));
+    } else {
+      timeProgress = 0;
+    }
+  } else {
+    const oneYearBeforeTarget = new Date(target.getTime() - 365 * 24 * 60 * 60 * 1000);
+    const totalDuration = target.getTime() - oneYearBeforeTarget.getTime();
+    const elapsedDuration = now.getTime() - oneYearBeforeTarget.getTime();
+    timeProgress = Math.max(0, Math.min(100, (elapsedDuration / totalDuration) * 100));
+  }
+
+  if (currentAmount === 0 && timeProgress < 10) {
+    status = 'on-track';
+  } else if (progress >= timeProgress * 1.1) {
     status = 'ahead';
   } else if (progress >= timeProgress * 0.9) {
     status = 'on-track';
@@ -294,7 +314,8 @@ export const calculateGoalProjection = (
     status = 'behind';
   }
 
-  const difference = currentAmount - (targetAmount * (timeProgress / 100));
+  const expectedAmount = (targetAmount * (timeProgress / 100));
+  const difference = currentAmount - expectedAmount;
 
   return {
     monthlyNeeded: Math.max(0, monthlyNeeded),

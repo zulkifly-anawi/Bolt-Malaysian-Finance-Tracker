@@ -67,7 +67,8 @@ export const GoalProjection = ({
     goal.current_amount,
     goal.target_amount,
     goal.target_date,
-    monthlyContribution
+    monthlyContribution,
+    goal.created_at
   );
 
   const bestAccount = recommendBestAccount(accounts as any, goal.category || 'Other');

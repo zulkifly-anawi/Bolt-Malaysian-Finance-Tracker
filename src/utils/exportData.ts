@@ -373,7 +373,8 @@ const calculateAllGoalProjections = (goals: any[]) => {
         goal.current_amount || 0,
         goal.target_amount,
         goal.target_date,
-        monthlyContribution
+        monthlyContribution,
+        goal.created_at
       );
 
       const now = new Date();
