@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDateInput } from '../../utils/formatters';
 import { validateGoalData } from '../../utils/validation';
 import type { Goal } from '../../types/database';
+import { useGoalCategories } from '../../hooks/useConfig';
 
 interface GoalFormProps {
   onClose: () => void;
@@ -18,21 +19,9 @@ interface GoalFormProps {
   editData?: Goal;
 }
 
-const GOAL_CATEGORIES = [
-  'Emergency Fund',
-  'House Downpayment',
-  'Car Purchase',
-  'Hajj',
-  'Children Education',
-  'Retirement',
-  'Wedding',
-  'Business Capital',
-  'Vacation',
-  'Other',
-];
-
 export const GoalForm = ({ onClose, onSuccess, initialData, editData }: GoalFormProps) => {
   const { user } = useAuth();
+  const { categories, loading: categoriesLoading } = useGoalCategories();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -160,9 +149,9 @@ export const GoalForm = ({ onClose, onSuccess, initialData, editData }: GoalForm
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-3 glass-card text-white rounded-xl focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none transition-all"
               >
-                {GOAL_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat} className="bg-gray-800">
-                    {cat}
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name} className="bg-gray-800">
+                    {cat.display_name}
                   </option>
                 ))}
               </select>

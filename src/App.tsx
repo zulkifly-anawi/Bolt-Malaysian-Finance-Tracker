@@ -4,12 +4,15 @@ import { LoginPage, SignupPage, ResetPasswordPage } from './components/Auth';
 import { EnhancedDashboard } from './components/EnhancedDashboard';
 import { LandingPage } from './components/LandingPage';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 
 type AuthView = 'landing' | 'login' | 'signup' | 'reset' | 'privacy';
+type AppView = 'main' | 'admin';
 
 function AppContent() {
   const { user, loading } = useAuth();
   const [authView, setAuthView] = useState<AuthView>('landing');
+  const [appView, setAppView] = useState<AppView>('main');
 
   if (loading) {
     return (
@@ -92,7 +95,11 @@ function AppContent() {
     );
   }
 
-  return <EnhancedDashboard />;
+  if (appView === 'admin') {
+    return <AdminDashboard onExitAdmin={() => setAppView('main')} />;
+  }
+
+  return <EnhancedDashboard onEnterAdmin={() => setAppView('admin')} />;
 }
 
 function App() {

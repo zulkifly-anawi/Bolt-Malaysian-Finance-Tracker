@@ -7,6 +7,7 @@ import { calculateDividendRateByMethod } from '../../utils/investmentCalculators
 import { validateAccountData, validateAge, validateSalary } from '../../utils/validation';
 import { EPFContributionSection } from './EPFContributionSection';
 import type { Account, EPFSavingsType, EPFDividendRateMethod } from '../../types/database';
+import { useAccountTypes, useInstitutions } from '../../hooks/useConfig';
 
 interface AccountFormProps {
   onClose: () => void;
@@ -14,34 +15,10 @@ interface AccountFormProps {
   editData?: Account;
 }
 
-const ACCOUNT_TYPES = [
-  { value: 'ASB', label: 'ASB (Amanah Saham Bumiputera)' },
-  { value: 'EPF', label: 'EPF (Employees Provident Fund)' },
-  { value: 'Tabung Haji', label: 'Tabung Haji' },
-  { value: 'Savings', label: 'Savings Account' },
-  { value: 'Fixed Deposit', label: 'Fixed Deposit' },
-  { value: 'Investment', label: 'Investment Account' },
-  { value: 'Other', label: 'Other' },
-];
-
-const INSTITUTIONS = [
-  'KWSP (EPF)',
-  'PNB (Permodalan Nasional Berhad)',
-  'Tabung Haji',
-  'Maybank',
-  'CIMB Bank',
-  'Public Bank',
-  'RHB Bank',
-  'Hong Leong Bank',
-  'AmBank',
-  'Bank Rakyat',
-  'Bank Islam',
-  'HSBC',
-  'Other',
-];
-
 export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) => {
   const { user } = useAuth();
+  const { accountTypes, loading: accountTypesLoading } = useAccountTypes();
+  const { institutions, loading: institutionsLoading } = useInstitutions();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -323,9 +300,9 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
                 onChange={(e) => setFormData({ ...formData, accountType: e.target.value })}
                 className="w-full px-4 py-3 glass-card text-white rounded-xl focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none transition-all"
               >
-                {ACCOUNT_TYPES.map((type) => (
-                  <option key={type.value} value={type.value} className="bg-gray-800">
-                    {type.label}
+                {accountTypes.map((type) => (
+                  <option key={type.id} value={type.name} className="bg-gray-800">
+                    {type.display_name}
                   </option>
                 ))}
               </select>
@@ -341,9 +318,9 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
                 className="w-full px-4 py-3 glass-card text-white rounded-xl focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none transition-all"
               >
                 <option value="" className="bg-gray-800">Select institution (optional)</option>
-                {INSTITUTIONS.map((inst) => (
-                  <option key={inst} value={inst} className="bg-gray-800">
-                    {inst}
+                {institutions.map((inst) => (
+                  <option key={inst.id} value={inst.name} className="bg-gray-800">
+                    {inst.display_name}
                   </option>
                 ))}
               </select>

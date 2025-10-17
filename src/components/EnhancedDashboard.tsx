@@ -26,9 +26,15 @@ import { GoalCard } from './goals/GoalCard';
 import { ToastContainer } from './common/ToastContainer';
 import type { ToastProps } from './common/Toast';
 import type { Goal, Account, Achievement } from '../types/database';
+import { useAdminAuth } from '../hooks/useConfig';
 
-export const EnhancedDashboard = () => {
+interface EnhancedDashboardProps {
+  onEnterAdmin?: () => void;
+}
+
+export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {}) => {
   const { signOut, user } = useAuth();
+  const { isAdmin } = useAdminAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [goals, setGoals] = useState<Goal[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -197,6 +203,12 @@ export const EnhancedDashboard = () => {
             <h1 className="text-xl font-bold text-white drop-shadow-lg">Malaysian Finance Tracker</h1>
             <div className="flex items-center gap-2">
               <NotificationsPanel />
+              {isAdmin && onEnterAdmin && (
+                <button onClick={onEnterAdmin} className="flex items-center gap-2 px-4 py-2 text-white text-opacity-90 hover:text-opacity-100 glass-button rounded-xl transition-all">
+                  <Shield className="w-4 h-4" />
+                  <span>Admin</span>
+                </button>
+              )}
               <button onClick={signOut} className="flex items-center gap-2 px-4 py-2 text-white text-opacity-90 hover:text-opacity-100 glass-button rounded-xl transition-all">
                 <LogOut className="w-4 h-4" />
                 <span>Log Out</span>
