@@ -89,27 +89,29 @@ export const AccountConfigPage = () => {
           {(activeTab === 'types' ? accountTypes : institutions).map((item) => (
             <div
               key={item.id}
-              className="glass rounded-xl p-4 flex items-center justify-between hover:bg-white/5 transition-all"
+              className="glass rounded-xl p-4 hover:bg-white/5 transition-all relative"
             >
-              <div className="flex-1">
-                <h3 className="font-semibold text-white mb-1">{item.display_name}</h3>
-                <p className="text-sm text-white/60">{item.name}</p>
-                {item.description && (
-                  <p className="text-xs text-white/50 mt-1">{item.description}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
-                  item.is_active ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400'
-                }`}>
-                  {item.is_active ? 'Active' : 'Inactive'}
-                </span>
+              <div className="absolute top-4 right-4 flex items-center gap-2">
                 <button className="p-2 glass-button text-white rounded-lg hover:scale-110 transition-all">
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button className="p-2 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all">
                   <Trash2 className="w-4 h-4" />
                 </button>
+              </div>
+              <div className="pr-24">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-white">{item.display_name}</h3>
+                  <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${
+                    item.is_active ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400'
+                  }`}>
+                    {item.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <p className="text-sm text-white/60">{item.name}</p>
+                {item.description && (
+                  <p className="text-xs text-white/50 mt-1">{item.description}</p>
+                )}
               </div>
             </div>
           ))}

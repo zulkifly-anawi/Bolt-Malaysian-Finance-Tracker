@@ -162,25 +162,9 @@ export const GoalConfigPage = () => {
             {categories.map((category) => (
               <div
                 key={category.id}
-                className="glass rounded-xl p-4 flex items-center justify-between hover:bg-white/5 transition-all"
+                className="glass rounded-xl p-4 hover:bg-white/5 transition-all relative"
               >
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                    <Target className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-white mb-1">{category.display_name}</h3>
-                    {category.description && (
-                      <p className="text-sm text-white/60">{category.description}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
-                    category.is_active ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400'
-                  }`}>
-                    {category.is_active ? 'Active' : 'Inactive'}
-                  </span>
+                <div className="absolute top-4 right-4 flex items-center gap-2">
                   <button
                     onClick={() => setEditingCategory(category)}
                     className="p-2 glass-button text-white rounded-lg hover:scale-110 transition-all"
@@ -199,6 +183,24 @@ export const GoalConfigPage = () => {
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
+                <div className="flex items-center gap-4 pr-24">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                    <Target className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-white">{category.display_name}</h3>
+                      <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
+                        category.is_active ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        {category.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    {category.description && (
+                      <p className="text-sm text-white/60">{category.description}</p>
+                    )}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -207,44 +209,44 @@ export const GoalConfigPage = () => {
             {templates.map((template) => (
               <div
                 key={template.id}
-                className="glass rounded-2xl p-5 hover:scale-105 transition-all"
+                className="glass rounded-2xl p-5 hover:scale-105 transition-all relative"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-white mb-1">{template.name}</h3>
-                    <span className="text-xs text-white/60">{template.category}</span>
+                <div className="absolute top-4 right-4 flex gap-1">
+                  <button
+                    onClick={() => setEditingTemplate(template)}
+                    className="p-1.5 glass-button text-white rounded-lg hover:scale-110 transition-all"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteDialog({
+                      isOpen: true,
+                      type: 'template',
+                      id: template.id,
+                      name: template.name,
+                    })}
+                    className="p-1.5 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="pr-16 mb-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-white">{template.name}</h3>
+                    <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
+                      template.is_active ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400'
+                    }`}>
+                      {template.is_active ? 'Active' : 'Inactive'}
+                    </span>
                   </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => setEditingTemplate(template)}
-                      className="p-1.5 glass-button text-white rounded-lg hover:scale-110 transition-all"
-                    >
-                      <Edit2 className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => setDeleteDialog({
-                        isOpen: true,
-                        type: 'template',
-                        id: template.id,
-                        name: template.name,
-                      })}
-                      className="p-1.5 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
+                  <span className="text-xs text-white/60">{template.category}</span>
                 </div>
                 {template.description && (
                   <p className="text-sm text-white/70 mb-3 line-clamp-2">{template.description}</p>
                 )}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center">
                   <span className="text-sm font-semibold text-white">
                     RM {template.default_amount.toLocaleString()}
-                  </span>
-                  <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${
-                    template.is_active ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400'
-                  }`}>
-                    {template.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
               </div>
