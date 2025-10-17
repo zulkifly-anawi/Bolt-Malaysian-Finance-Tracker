@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Edit2, MoreVertical, TrendingUp, Calendar, CheckCircle, Trash2, Eye } from 'lucide-react';
 import { formatCurrency, formatDate, calculateProgress, isGoalOnTrack } from '../../utils/formatters';
 import { QuickEditGoal } from './QuickEditGoal';
@@ -27,6 +27,24 @@ export const GoalCard = ({
 }: GoalCardProps) => {
   const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<'right' | 'left'>('right');
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showMenu && menuButtonRef.current && menuRef.current) {
+      const buttonRect = menuButtonRef.current.getBoundingClientRect();
+      const menuWidth = 192;
+      const viewportWidth = window.innerWidth;
+      const spaceOnRight = viewportWidth - buttonRect.right;
+
+      if (spaceOnRight < menuWidth && buttonRect.left > menuWidth) {
+        setMenuPosition('left');
+      } else {
+        setMenuPosition('right');
+      }
+    }
+  }, [showMenu]);
 
   const manualProgress = goal.manual_amount || 0;
   const totalProgress = accountProgress + manualProgress;
@@ -58,12 +76,13 @@ export const GoalCard = ({
   }
 
   return (
-    <div className="glass-card rounded-2xl p-6 glass-hover transition-all relative group">
+    <div className="glass-card rounded-2xl p-6 glass-hover transition-all relative group overflow-visible">
       <div className="absolute top-3 right-3 flex items-center gap-2">
         <div className={`w-2 h-2 rounded-full ${getPriorityColor(goal.priority)}`} title={`${goal.priority} priority`} />
 
         <div className="relative">
           <button
+            ref={menuButtonRef}
             onClick={() => setShowMenu(!showMenu)}
             className="p-2 glass-card text-white text-opacity-70 hover:text-opacity-100 rounded-lg transition-all"
             title="More options"
@@ -77,7 +96,10 @@ export const GoalCard = ({
                 className="fixed inset-0 z-10"
                 onClick={() => setShowMenu(false)}
               />
-              <div className="absolute right-0 mt-2 w-48 glass-strong rounded-xl shadow-lg z-20 overflow-hidden">
+              <div
+                ref={menuRef}
+                className={`absolute ${menuPosition === 'right' ? 'right-0' : 'left-0'} mt-2 w-48 glass-strong rounded-xl shadow-lg z-20 overflow-hidden animate-fade-in`}
+              >
                 <button
                   onClick={() => {
                     setShowMenu(false);

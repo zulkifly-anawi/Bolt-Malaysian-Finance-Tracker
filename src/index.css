@@ -206,6 +206,15 @@
   .active\:scale-98:active {
     transform: scale(0.98);
   }
+
+  .overflow-visible {
+    overflow: visible !important;
+  }
+
+  .overflow-visible-force {
+    overflow: visible !important;
+    contain: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
