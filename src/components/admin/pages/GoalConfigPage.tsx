@@ -3,12 +3,26 @@ import { Plus, Edit2, Trash2, Target } from 'lucide-react';
 import { adminConfigService } from '../../../services/adminConfigService';
 import { supabase } from '../../../lib/supabase';
 import type { GoalCategory } from '../../../services/configService';
+import { ConfirmDialog } from '../../ConfirmDialog';
+import { EditCategoryModal } from '../modals/EditCategoryModal';
+import { EditTemplateModal } from '../modals/EditTemplateModal';
+import { ToastContainer } from '../../common/ToastContainer';
+import type { ToastProps } from '../../common/Toast';
 
 export const GoalConfigPage = () => {
   const [activeTab, setActiveTab] = useState<'categories' | 'templates'>('categories');
   const [categories, setCategories] = useState<GoalCategory[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [toasts, setToasts] = useState<ToastProps[]>([]);
+  const [editingCategory, setEditingCategory] = useState<GoalCategory | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    type: 'category' | 'template';
+    id: string;
+    name: string;
+  }>({ isOpen: false, type: 'category', id: '', name: '' });
 
   useEffect(() => {
     loadData();
@@ -25,9 +39,73 @@ export const GoalConfigPage = () => {
       setTemplates(temps.data || []);
     } catch (error) {
       console.error('Failed to load configuration:', error);
+      showToast('Failed to load configuration', 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    const id = Date.now().toString();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  };
+
+  const handleEditCategory = async (id: string, data: Partial<GoalCategory>) => {
+    try {
+      await adminConfigService.updateGoalCategory(id, data);
+      await loadData();
+      showToast('Category updated successfully', 'success');
+    } catch (error) {
+      console.error('Failed to update category:', error);
+      showToast('Failed to update category', 'error');
+      throw error;
+    }
+  };
+
+  const handleEditTemplate = async (id: string, data: any) => {
+    try {
+      await adminConfigService.updateGoalTemplate(id, data);
+      await loadData();
+      showToast('Template updated successfully', 'success');
+    } catch (error) {
+      console.error('Failed to update template:', error);
+      showToast('Failed to update template', 'error');
+      throw error;
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    try {
+      await adminConfigService.deleteGoalCategory(deleteDialog.id);
+      await loadData();
+      showToast('Category deleted successfully', 'success');
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+      showToast('Failed to delete category', 'error');
+    }
+  };
+
+  const handleDeleteTemplate = async () => {
+    try {
+      await adminConfigService.deleteGoalTemplate(deleteDialog.id);
+      await loadData();
+      showToast('Template deleted successfully', 'success');
+    } catch (error) {
+      console.error('Failed to delete template:', error);
+      showToast('Failed to delete template', 'error');
+    }
+  };
+
+  const confirmDelete = () => {
+    if (deleteDialog.type === 'category') {
+      handleDeleteCategory();
+    } else {
+      handleDeleteTemplate();
+    }
+    setDeleteDialog({ isOpen: false, type: 'category', id: '', name: '' });
   };
 
   if (loading) {
@@ -103,10 +181,21 @@ export const GoalConfigPage = () => {
                   }`}>
                     {category.is_active ? 'Active' : 'Inactive'}
                   </span>
-                  <button className="p-2 glass-button text-white rounded-lg hover:scale-110 transition-all">
+                  <button
+                    onClick={() => setEditingCategory(category)}
+                    className="p-2 glass-button text-white rounded-lg hover:scale-110 transition-all"
+                  >
                     <Edit2 className="w-4 h-4" />
                   </button>
-                  <button className="p-2 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all">
+                  <button
+                    onClick={() => setDeleteDialog({
+                      isOpen: true,
+                      type: 'category',
+                      id: category.id,
+                      name: category.display_name,
+                    })}
+                    className="p-2 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -126,10 +215,21 @@ export const GoalConfigPage = () => {
                     <span className="text-xs text-white/60">{template.category}</span>
                   </div>
                   <div className="flex gap-1">
-                    <button className="p-1.5 glass-button text-white rounded-lg hover:scale-110 transition-all">
+                    <button
+                      onClick={() => setEditingTemplate(template)}
+                      className="p-1.5 glass-button text-white rounded-lg hover:scale-110 transition-all"
+                    >
                       <Edit2 className="w-3 h-3" />
                     </button>
-                    <button className="p-1.5 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all">
+                    <button
+                      onClick={() => setDeleteDialog({
+                        isOpen: true,
+                        type: 'template',
+                        id: template.id,
+                        name: template.name,
+                      })}
+                      className="p-1.5 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all"
+                    >
                       <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
@@ -152,6 +252,33 @@ export const GoalConfigPage = () => {
           </div>
         )}
       </div>
+
+      <EditCategoryModal
+        isOpen={editingCategory !== null}
+        category={editingCategory}
+        onClose={() => setEditingCategory(null)}
+        onSave={handleEditCategory}
+      />
+
+      <EditTemplateModal
+        isOpen={editingTemplate !== null}
+        template={editingTemplate}
+        onClose={() => setEditingTemplate(null)}
+        onSave={handleEditTemplate}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        title={`Delete ${deleteDialog.type === 'category' ? 'Category' : 'Template'}`}
+        message={`Are you sure you want to delete "${deleteDialog.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteDialog({ isOpen: false, type: 'category', id: '', name: '' })}
+      />
+
+      <ToastContainer toasts={toasts} onClose={(id) => setToasts(toasts.filter(t => t.id !== id))} />
     </div>
   );
 };

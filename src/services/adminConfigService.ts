@@ -302,6 +302,82 @@ export const adminConfigService = {
     return data;
   },
 
+  async createGoalTemplate(data: any) {
+    const { data: result, error } = await supabase
+      .from('goal_templates')
+      .insert({
+        ...data,
+        created_by: (await supabase.auth.getUser()).data.user?.id,
+        updated_by: (await supabase.auth.getUser()).data.user?.id,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    await auditService.logAction({
+      action_type: 'CREATE',
+      table_name: 'goal_templates',
+      record_id: result.id,
+      new_value: result,
+    });
+
+    return result;
+  },
+
+  async updateGoalTemplate(id: string, data: any) {
+    const { data: oldData } = await supabase
+      .from('goal_templates')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    const { data: result, error } = await supabase
+      .from('goal_templates')
+      .update({
+        ...data,
+        updated_by: (await supabase.auth.getUser()).data.user?.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    await auditService.logAction({
+      action_type: 'UPDATE',
+      table_name: 'goal_templates',
+      record_id: id,
+      old_value: oldData,
+      new_value: result,
+    });
+
+    return result;
+  },
+
+  async deleteGoalTemplate(id: string) {
+    const { data: oldData } = await supabase
+      .from('goal_templates')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    const { error } = await supabase
+      .from('goal_templates')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    await auditService.logAction({
+      action_type: 'DELETE',
+      table_name: 'goal_templates',
+      record_id: id,
+      old_value: oldData,
+    });
+  },
+
   async reorderItems(tableName: string, items: Array<{ id: string; sort_order: number }>) {
     const updates = items.map(item =>
       supabase
