@@ -198,20 +198,23 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
   return (
     <div className="min-h-screen gradient-mesh">
       <nav className="glass border-b border-white border-opacity-20 sticky top-0 z-20 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-bold text-white drop-shadow-lg">Malaysian Finance Tracker</h1>
-            <div className="flex items-center gap-2">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-16 gap-2 sm:gap-4">
+            <h1 className="text-base sm:text-lg md:text-xl font-bold text-white drop-shadow-lg truncate flex-shrink min-w-0">
+              <span className="hidden sm:inline">Malaysian Finance Tracker</span>
+              <span className="sm:hidden">Finance Tracker</span>
+            </h1>
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <NotificationsPanel />
               {isAdmin && onEnterAdmin && (
-                <button onClick={onEnterAdmin} className="flex items-center gap-2 px-4 py-2 text-white text-opacity-90 hover:text-opacity-100 glass-button rounded-xl transition-all">
-                  <Shield className="w-4 h-4" />
-                  <span>Admin</span>
+                <button onClick={onEnterAdmin} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 text-white text-opacity-90 hover:text-opacity-100 glass-button rounded-xl transition-all">
+                  <Shield className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden md:inline text-sm">Admin</span>
                 </button>
               )}
-              <button onClick={signOut} className="flex items-center gap-2 px-4 py-2 text-white text-opacity-90 hover:text-opacity-100 glass-button rounded-xl transition-all">
-                <LogOut className="w-4 h-4" />
-                <span>Log Out</span>
+              <button onClick={signOut} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 text-white text-opacity-90 hover:text-opacity-100 glass-button rounded-xl transition-all">
+                <LogOut className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline text-sm">Log Out</span>
               </button>
             </div>
           </div>
