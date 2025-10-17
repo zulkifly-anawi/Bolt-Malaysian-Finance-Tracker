@@ -181,29 +181,29 @@ export const NotificationsPanel = () => {
                         <div className="flex-shrink-0 mt-1">
                           {getIcon(notification.notification_type)}
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 w-full">
                           <div className="flex items-start justify-between gap-2 mb-1">
-                            <h4 className="font-semibold text-gray-900 text-sm break-words">
+                            <h4 className="font-semibold text-gray-900 text-sm sm:text-base break-words flex-1">
                               {notification.title}
                             </h4>
                             <button
                               onClick={() => deleteNotification(notification.id)}
-                              className="text-gray-400 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center sm:min-h-0 sm:min-w-0 flex-shrink-0"
+                              className="text-gray-400 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center sm:min-h-0 sm:min-w-0 flex-shrink-0 -mt-1"
                             >
                               <X className="w-4 h-4" />
                             </button>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2 break-words">
+                          <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 break-words leading-relaxed">
                             {notification.message}
                           </p>
-                          <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <span className="text-xs text-gray-500">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <span className="text-xs text-gray-500 order-2 sm:order-1">
                               {formatDate(notification.created_at)}
                             </span>
                             {!notification.is_read && (
                               <button
                                 onClick={() => markAsRead(notification.id)}
-                                className="text-xs text-teal-600 hover:text-teal-700 font-medium min-h-[44px] sm:min-h-0 flex items-center whitespace-nowrap"
+                                className="text-xs text-teal-600 hover:text-teal-700 font-medium min-h-[44px] sm:min-h-0 flex items-center justify-start sm:justify-end whitespace-nowrap order-1 sm:order-2"
                               >
                                 Mark as read
                               </button>
