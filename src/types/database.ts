@@ -117,12 +117,14 @@ export interface GoalTemplate {
 export interface DividendHistory {
   id: string;
   account_type: string;
+  scheme_type: 'Conventional' | 'Syariah' | null;
   year: number;
   dividend_rate: number;
   dividend_component: number | null;
   bonus_component: number | null;
   notes: string | null;
-  is_historical: boolean;
+  is_projection: boolean;
+  updated_by: string | null;
   created_at: string;
 }
 

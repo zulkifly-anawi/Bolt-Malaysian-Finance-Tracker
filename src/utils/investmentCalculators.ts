@@ -5,20 +5,29 @@ export const DIVIDEND_RATES = {
     2022: 4.60,
     2021: 5.00,
     2020: 5.50,
+    2019: 5.50,
+    2018: 7.00,
+    2017: 6.50,
   },
   'Tabung Haji': {
-    2024: 5.50,
-    2023: 4.75,
-    2022: 4.50,
-    2021: 3.75,
-    2020: 4.00,
+    2024: 3.25,
+    2023: 3.10,
+    2022: 3.10,
+    2021: 3.10,
+    2020: 3.10,
+    2019: 3.05,
+    2018: 1.25,
+    2017: 4.00,
   },
   EPF: {
-    2024: 5.50,
-    2023: 5.35,
-    2022: 6.10,
+    2024: 6.30,
+    2023: 5.50,
+    2022: 5.35,
     2021: 6.10,
     2020: 5.20,
+    2019: 5.45,
+    2018: 6.15,
+    2017: 6.90,
   },
 };
 
@@ -92,9 +101,12 @@ export const calculateDividendRateByMethod = (
 export const ASB_RATES_DETAILED = {
   2024: { dividend: 5.50, bonus: 0.25, total: 5.75 },
   2023: { dividend: 4.25, bonus: 1.00, total: 5.25 },
-  2022: { dividend: 3.35, bonus: 1.25, total: 4.60 },
+  2022: { dividend: 4.10, bonus: 0.50, total: 4.60 },
   2021: { dividend: 4.25, bonus: 0.75, total: 5.00 },
-  2020: { dividend: 5.50, bonus: 0.00, total: 5.50 },
+  2020: { dividend: 4.75, bonus: 0.75, total: 5.50 },
+  2019: { dividend: 5.00, bonus: 0.50, total: 5.50 },
+  2018: { dividend: 6.25, bonus: 0.75, total: 7.00 },
+  2017: { dividend: 6.00, bonus: 0.50, total: 6.50 },
 };
 
 export const calculateASBDividendByUnits = (

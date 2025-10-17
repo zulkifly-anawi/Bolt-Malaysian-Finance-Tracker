@@ -6,6 +6,7 @@ import { auditService } from '../../../services/auditService';
 interface DividendRate {
   id: string;
   account_type: string;
+  scheme_type: 'Conventional' | 'Syariah' | null;
   year: number;
   dividend_rate: number;
   is_projection: boolean;
@@ -14,6 +15,7 @@ interface DividendRate {
 
 interface RateFormData {
   account_type: string;
+  scheme_type: 'Conventional' | 'Syariah' | null;
   year: number;
   dividend_rate: number;
   is_projection: boolean;
@@ -29,6 +31,7 @@ export const InvestmentRatesPage = () => {
 
   const [formData, setFormData] = useState<RateFormData>({
     account_type: 'ASB',
+    scheme_type: null,
     year: new Date().getFullYear(),
     dividend_rate: 0,
     is_projection: false,
@@ -68,6 +71,11 @@ export const InvestmentRatesPage = () => {
 
     if (formData.year < 2000 || formData.year > 2100) {
       setError('Please enter a valid year');
+      return;
+    }
+
+    if (formData.account_type === 'EPF' && !formData.scheme_type) {
+      setError('Please select a scheme type for EPF');
       return;
     }
 
@@ -121,6 +129,7 @@ export const InvestmentRatesPage = () => {
     setEditingRate(rate);
     setFormData({
       account_type: rate.account_type,
+      scheme_type: rate.scheme_type,
       year: rate.year,
       dividend_rate: rate.dividend_rate,
       is_projection: rate.is_projection,
@@ -158,6 +167,7 @@ export const InvestmentRatesPage = () => {
     setEditingRate(null);
     setFormData({
       account_type: 'ASB',
+      scheme_type: null,
       year: new Date().getFullYear(),
       dividend_rate: 0,
       is_projection: false,
@@ -221,7 +231,14 @@ export const InvestmentRatesPage = () => {
                 <select
                   required
                   value={formData.account_type}
-                  onChange={(e) => setFormData({ ...formData, account_type: e.target.value })}
+                  onChange={(e) => {
+                    const newType = e.target.value;
+                    setFormData({
+                      ...formData,
+                      account_type: newType,
+                      scheme_type: newType === 'EPF' ? 'Conventional' : null
+                    });
+                  }}
                   className="w-full px-4 py-2 glass-card text-white rounded-xl focus:ring-2 focus:ring-white/30 outline-none"
                 >
                   <option value="ASB" className="bg-gray-800">ASB</option>
@@ -229,6 +246,26 @@ export const InvestmentRatesPage = () => {
                   <option value="EPF" className="bg-gray-800">EPF</option>
                 </select>
               </div>
+
+              {formData.account_type === 'EPF' && (
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    EPF Scheme Type *
+                  </label>
+                  <select
+                    required
+                    value={formData.scheme_type || ''}
+                    onChange={(e) => setFormData({ ...formData, scheme_type: e.target.value as 'Conventional' | 'Syariah' })}
+                    className="w-full px-4 py-2 glass-card text-white rounded-xl focus:ring-2 focus:ring-white/30 outline-none"
+                  >
+                    <option value="Conventional" className="bg-gray-800">Conventional</option>
+                    <option value="Syariah" className="bg-gray-800">Syariah</option>
+                  </select>
+                  <p className="text-xs text-white/60 mt-1">
+                    EPF offers separate rates for Conventional and Syariah schemes
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-2">
@@ -332,6 +369,7 @@ export const InvestmentRatesPage = () => {
               <thead>
                 <tr className="border-b border-white/10">
                   <th className="text-left py-3 px-4 text-white/80 font-semibold">Investment Type</th>
+                  <th className="text-left py-3 px-4 text-white/80 font-semibold">Scheme</th>
                   <th className="text-left py-3 px-4 text-white/80 font-semibold">Year</th>
                   <th className="text-left py-3 px-4 text-white/80 font-semibold">Dividend Rate</th>
                   <th className="text-left py-3 px-4 text-white/80 font-semibold">Type</th>
@@ -347,6 +385,19 @@ export const InvestmentRatesPage = () => {
                     <td className="py-4 px-4">
                       <span className="font-medium text-white">{rate.account_type}</span>
                     </td>
+                    <td className="py-4 px-4">
+                      {rate.scheme_type ? (
+                        <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${
+                          rate.scheme_type === 'Conventional'
+                            ? 'bg-blue-500/20 text-blue-300'
+                            : 'bg-emerald-500/20 text-emerald-300'
+                        }`}>
+                          {rate.scheme_type}
+                        </span>
+                      ) : (
+                        <span className="text-white/40 text-xs">-</span>
+                      )}
+                    </td>
                     <td className="py-4 px-4 text-white/80">{rate.year}</td>
                     <td className="py-4 px-4">
                       <span className="text-lg font-bold text-green-300">{rate.dividend_rate}%</span>
@@ -354,7 +405,7 @@ export const InvestmentRatesPage = () => {
                     <td className="py-4 px-4">
                       <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${
                         rate.is_projection
-                          ? 'bg-blue-500/20 text-blue-300'
+                          ? 'bg-amber-500/20 text-amber-300'
                           : 'bg-green-500/20 text-green-300'
                       }`}>
                         {rate.is_projection ? 'Projected' : 'Actual'}
