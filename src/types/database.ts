@@ -15,6 +15,9 @@ export interface Profile {
   updated_at: string;
 }
 
+export type EPFSavingsType = 'Conventional' | 'Syariah';
+export type EPFDividendRateMethod = 'latest' | '3-year-average' | '5-year-average' | 'historical-average';
+
 export interface Account {
   id: string;
   user_id: string;
@@ -32,6 +35,8 @@ export interface Account {
   use_total_contribution: boolean;
   is_manual_contribution: boolean;
   pilgrimage_goal_type: 'Hajj' | 'Umrah' | null;
+  epf_savings_type: EPFSavingsType | null;
+  epf_dividend_rate_method: EPFDividendRateMethod | null;
   created_at: string;
   updated_at: string;
 }

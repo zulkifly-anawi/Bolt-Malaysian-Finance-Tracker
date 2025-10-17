@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Calculator, TrendingUp, AlertCircle, CheckCircle2, Calendar, Settings } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
-import { calculateEPFProjection, DIVIDEND_RATES, getEPFBenchmarkForAge } from '../../utils/investmentCalculators';
+import { calculateEPFProjection, getEPFBenchmarkForAge, calculateDividendRateByMethod, EPF_CONVENTIONAL_RATES, EPF_SYARIAH_RATES } from '../../utils/investmentCalculators';
+import type { EPFSavingsType, EPFDividendRateMethod } from '../../types/database';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { getEPFContributionSettings, calculateEPFContribution, getContributionExplanation } from '../../utils/epfContributionHelpers';
@@ -13,6 +14,8 @@ interface EPFCalculatorProps {
     name: string;
     current_balance: number;
     monthly_contribution?: number;
+    epf_savings_type?: EPFSavingsType | null;
+    epf_dividend_rate_method?: EPFDividendRateMethod | null;
   };
 }
 
@@ -23,6 +26,8 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
   const [projection, setProjection] = useState<any>(null);
   const [contributionSettings, setContributionSettings] = useState<EPFContributionSettings | null>(null);
   const [contributionBreakdown, setContributionBreakdown] = useState<any>(null);
+  const [savingsType, setSavingsType] = useState<EPFSavingsType>(account.epf_savings_type || 'Conventional');
+  const [rateMethod, setRateMethod] = useState<EPFDividendRateMethod>(account.epf_dividend_rate_method || 'latest');
 
   useEffect(() => {
     loadUserProfile();
@@ -41,11 +46,13 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
         55,
         contributionSettings.employeePercentage,
         contributionSettings.employerPercentage,
-        contributionSettings.useTotal
+        contributionSettings.useTotal,
+        savingsType,
+        rateMethod
       );
       setProjection(proj);
     }
-  }, [account, userAge, monthlySalary, contributionSettings]);
+  }, [account, userAge, monthlySalary, contributionSettings, savingsType, rateMethod]);
 
   const loadUserProfile = async () => {
     if (!user) return;
@@ -67,8 +74,30 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
     setContributionSettings(settings);
   };
 
-  const currentYearRate = DIVIDEND_RATES.EPF[2024];
+  const currentYearRate = calculateDividendRateByMethod(savingsType, rateMethod);
   const estimatedAnnualDividend = account.current_balance * (currentYearRate / 100);
+
+  const updateSavingsSettings = async (newSavingsType?: EPFSavingsType, newRateMethod?: EPFDividendRateMethod) => {
+    if (!user) return;
+
+    const updates: any = {};
+    if (newSavingsType) {
+      setSavingsType(newSavingsType);
+      updates.epf_savings_type = newSavingsType;
+    }
+    if (newRateMethod) {
+      setRateMethod(newRateMethod);
+      updates.epf_dividend_rate_method = newRateMethod;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await supabase
+        .from('accounts')
+        .update(updates)
+        .eq('id', account.id)
+        .eq('user_id', user.id);
+    }
+  };
   const currentBenchmark = getEPFBenchmarkForAge(userAge);
   const benchmarkProgress = (account.current_balance / currentBenchmark) * 100;
 
@@ -99,15 +128,61 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="glass-strong rounded-2xl p-5 mb-6">
+        <h4 className="font-semibold text-white mb-4">EPF Savings Settings</h4>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-white text-opacity-80 mb-2">Savings Type</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => updateSavingsSettings('Conventional', undefined)}
+                className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                  savingsType === 'Conventional'
+                    ? 'glass-button text-white shadow-lg'
+                    : 'glass text-white text-opacity-70 hover:text-opacity-100'
+                }`}
+              >
+                Conventional
+              </button>
+              <button
+                onClick={() => updateSavingsSettings('Syariah', undefined)}
+                className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                  savingsType === 'Syariah'
+                    ? 'glass-button text-white shadow-lg'
+                    : 'glass text-white text-opacity-70 hover:text-opacity-100'
+                }`}
+              >
+                Syariah
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white text-opacity-80 mb-2">Dividend Rate Method</label>
+            <select
+              value={rateMethod}
+              onChange={(e) => updateSavingsSettings(undefined, e.target.value as EPFDividendRateMethod)}
+              className="w-full px-4 py-2 glass-card text-white rounded-xl focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none transition-all"
+            >
+              <option value="latest" className="bg-gray-800">Latest Rate (2024)</option>
+              <option value="3-year-average" className="bg-gray-800">3-Year Average (2022-2024)</option>
+              <option value="5-year-average" className="bg-gray-800">5-Year Average (2020-2024)</option>
+              <option value="historical-average" className="bg-gray-800">Historical Average (2017-2024)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="glass rounded-2xl p-4">
           <p className="text-sm font-medium text-white text-opacity-80 mb-2">Current EPF Balance</p>
           <p className="text-2xl font-bold text-white">{formatCurrency(account.current_balance)}</p>
         </div>
 
         <div className="glass rounded-2xl p-4">
-          <p className="text-sm font-medium text-white text-opacity-80 mb-2">2024 Dividend Rate</p>
-          <p className="text-2xl font-bold text-gray-200">{currentYearRate}%</p>
+          <p className="text-sm font-medium text-white text-opacity-80 mb-2">Calculated Rate ({savingsType})</p>
+          <p className="text-2xl font-bold text-gray-200">{currentYearRate.toFixed(2)}%</p>
         </div>
 
         <div className="glass rounded-2xl p-4">
@@ -190,15 +265,42 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
         </div>
       )}
 
-      <div className="glass-strong rounded-2xl p-4 mb-6">
-        <h4 className="font-semibold text-white mb-3">Historical Dividend Rates</h4>
-        <div className="grid grid-cols-5 gap-2">
-          {Object.entries(DIVIDEND_RATES.EPF).reverse().map(([year, rate]) => (
-            <div key={year} className="text-center">
-              <p className="text-xs text-white text-opacity-70 mb-1">{year}</p>
-              <p className="text-sm font-bold text-gray-300">{rate}%</p>
-            </div>
-          ))}
+      <div className="glass-strong rounded-2xl p-5 mb-6">
+        <h4 className="font-semibold text-white mb-4">Historical Dividend Rates (2017-2024)</h4>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-white border-opacity-20">
+                <th className="text-left text-sm font-medium text-white text-opacity-80 pb-3">Year</th>
+                <th className="text-center text-sm font-medium text-white text-opacity-80 pb-3">Conventional</th>
+                <th className="text-center text-sm font-medium text-white text-opacity-80 pb-3">Syariah</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.keys(EPF_CONVENTIONAL_RATES).sort((a, b) => Number(b) - Number(a)).map((year) => {
+                const conventionalRate = EPF_CONVENTIONAL_RATES[Number(year)];
+                const syariahRate = EPF_SYARIAH_RATES[Number(year)];
+
+                return (
+                  <tr key={year} className="border-b border-white border-opacity-10">
+                    <td className="py-3 text-white font-medium">{year}</td>
+                    <td className={`py-3 text-center font-semibold ${savingsType === 'Conventional' ? 'text-white' : 'text-white text-opacity-60'}`}>
+                      {conventionalRate.toFixed(2)}%
+                    </td>
+                    <td className={`py-3 text-center font-semibold ${savingsType === 'Syariah' ? 'text-white' : 'text-white text-opacity-60'}`}>
+                      {syariahRate.toFixed(2)}%
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-4 pt-4 border-t border-white border-opacity-20">
+          <p className="text-xs text-white text-opacity-60">
+            Historical rates shown for reference. Your selected <span className="font-semibold text-white">{savingsType}</span> rates are highlighted.
+            Actual future dividend rates may vary based on EPF investment performance.
+          </p>
         </div>
       </div>
 

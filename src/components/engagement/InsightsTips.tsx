@@ -43,6 +43,20 @@ export const InsightsTips = ({ netWorth, accounts, goals }: InsightsTipsProps) =
     const goalsOnTrack = goals.filter(g => !g.is_achieved && g.current_amount >= g.target_amount * 0.5);
     const goalsBehind = goals.filter(g => !g.is_achieved && g.current_amount < g.target_amount * 0.3);
 
+    const epfAccounts = accounts.filter(a => a.account_type === 'EPF');
+    if (epfAccounts.length > 0) {
+      const epfAccount = epfAccounts[0];
+      const savingsType = epfAccount.epf_savings_type || 'Conventional';
+      const rateMethod = epfAccount.epf_dividend_rate_method || 'latest';
+
+      newInsights.push({
+        type: 'info',
+        icon: 'trending-up',
+        title: `EPF ${savingsType} Account`,
+        message: `Your EPF account is set to ${savingsType} with dividend rate calculation using ${rateMethod.replace('-', ' ')}. Review your settings in the EPF Calculator if needed.`,
+      });
+    }
+
     if (netWorth >= 100000) {
       newInsights.push({
         type: 'success',

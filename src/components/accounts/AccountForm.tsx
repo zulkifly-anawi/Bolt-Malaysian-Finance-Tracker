@@ -3,9 +3,10 @@ import { X, Wallet, AlertCircle, Info } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency } from '../../utils/formatters';
+import { calculateDividendRateByMethod } from '../../utils/investmentCalculators';
 import { validateAccountData, validateAge, validateSalary } from '../../utils/validation';
 import { EPFContributionSection } from './EPFContributionSection';
-import type { Account } from '../../types/database';
+import type { Account, EPFSavingsType, EPFDividendRateMethod } from '../../types/database';
 
 interface AccountFormProps {
   onClose: () => void;
@@ -57,6 +58,8 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
     pilgrimageGoalType: editData?.pilgrimage_goal_type || 'Hajj',
     age: 0,
     monthlySalary: 0,
+    epfSavingsType: (editData?.epf_savings_type || 'Conventional') as EPFSavingsType,
+    epfDividendRateMethod: (editData?.epf_dividend_rate_method || 'latest') as EPFDividendRateMethod,
   });
 
   const [epfContribution, setEpfContribution] = useState<{
@@ -179,6 +182,8 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
 
       if (formData.accountType === 'EPF') {
         updateData.is_manual_contribution = epfContribution.isManual;
+        updateData.epf_savings_type = formData.epfSavingsType;
+        updateData.epf_dividend_rate_method = formData.epfDividendRateMethod;
         if (epfContribution.isManual) {
           updateData.monthly_contribution = epfContribution.manualAmount || 0;
           updateData.employee_contribution_percentage = null;
@@ -436,12 +441,81 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
               />
             </div>
 
-            {formData.accountType === 'EPF' && formData.monthlySalary > 0 && (
-              <EPFContributionSection
-                monthlySalary={formData.monthlySalary}
-                onContributionChange={setEpfContribution}
-                initialData={epfContribution}
-              />
+            {formData.accountType === 'EPF' && (
+              <>
+                <div className="glass-strong rounded-2xl p-5 space-y-4">
+                  <h4 className="font-semibold text-white mb-3">EPF Savings Type & Dividend Rate Settings</h4>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white text-opacity-95 mb-3">
+                      Savings Type *
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, epfSavingsType: 'Conventional' })}
+                        className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                          formData.epfSavingsType === 'Conventional'
+                            ? 'glass-button text-white shadow-lg'
+                            : 'glass text-white text-opacity-70 hover:text-opacity-100'
+                        }`}
+                      >
+                        Conventional
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, epfSavingsType: 'Syariah' })}
+                        className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                          formData.epfSavingsType === 'Syariah'
+                            ? 'glass-button text-white shadow-lg'
+                            : 'glass text-white text-opacity-70 hover:text-opacity-100'
+                        }`}
+                      >
+                        Syariah
+                      </button>
+                    </div>
+                    <div className="flex items-start gap-2 mt-2">
+                      <Info className="w-4 h-4 text-white text-opacity-60 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-white text-opacity-60">
+                        Select your EPF savings type. Both types offer competitive returns aligned with their respective investment principles.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white text-opacity-95 mb-2">
+                      Dividend Rate Method *
+                    </label>
+                    <select
+                      required
+                      value={formData.epfDividendRateMethod}
+                      onChange={(e) => setFormData({ ...formData, epfDividendRateMethod: e.target.value as EPFDividendRateMethod })}
+                      className="w-full px-4 py-3 glass-card text-white rounded-xl focus:ring-2 focus:ring-white focus:ring-opacity-40 outline-none transition-all"
+                    >
+                      <option value="latest" className="bg-gray-800">Use Latest Rate (2024)</option>
+                      <option value="3-year-average" className="bg-gray-800">Use 3-Year Average (2022-2024)</option>
+                      <option value="5-year-average" className="bg-gray-800">Use 5-Year Average (2020-2024)</option>
+                      <option value="historical-average" className="bg-gray-800">Use Historical Average (2017-2024)</option>
+                    </select>
+                    <div className="glass rounded-lg p-3 mt-2">
+                      <p className="text-sm text-white font-semibold mb-1">
+                        Calculated Rate: {calculateDividendRateByMethod(formData.epfSavingsType, formData.epfDividendRateMethod).toFixed(2)}%
+                      </p>
+                      <p className="text-xs text-white text-opacity-60">
+                        This rate will be used for all retirement projections and calculations. Historical rates are estimates; actual future rates may vary.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {formData.monthlySalary > 0 && (
+                  <EPFContributionSection
+                    monthlySalary={formData.monthlySalary}
+                    onContributionChange={setEpfContribution}
+                    initialData={epfContribution}
+                  />
+                )}
+              </>
             )}
 
             {formData.accountType !== 'EPF' && (

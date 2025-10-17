@@ -22,6 +22,28 @@ export const DIVIDEND_RATES = {
   },
 };
 
+export const EPF_CONVENTIONAL_RATES: Record<number, number> = {
+  2024: 6.30,
+  2023: 5.50,
+  2022: 5.35,
+  2021: 6.10,
+  2020: 5.20,
+  2019: 5.45,
+  2018: 6.15,
+  2017: 6.90,
+};
+
+export const EPF_SYARIAH_RATES: Record<number, number> = {
+  2024: 6.30,
+  2023: 5.40,
+  2022: 4.75,
+  2021: 5.65,
+  2020: 4.90,
+  2019: 5.00,
+  2018: 5.90,
+  2017: 6.40,
+};
+
 export const HAJJ_COST_2025 = 45000;
 export const UMRAH_COST = 15000;
 
@@ -35,6 +57,36 @@ export const EPF_BENCHMARKS = {
 export const calculateAverageDividendRate = (accountType: keyof typeof DIVIDEND_RATES): number => {
   const rates = Object.values(DIVIDEND_RATES[accountType]);
   return rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
+};
+
+export const getEPFDividendRates = (savingsType: 'Conventional' | 'Syariah'): Record<number, number> => {
+  return savingsType === 'Syariah' ? EPF_SYARIAH_RATES : EPF_CONVENTIONAL_RATES;
+};
+
+export const calculateDividendRateByMethod = (
+  savingsType: 'Conventional' | 'Syariah',
+  method: 'latest' | '3-year-average' | '5-year-average' | 'historical-average'
+): number => {
+  const rates = getEPFDividendRates(savingsType);
+  const years = Object.keys(rates).map(Number).sort((a, b) => b - a);
+  const values = years.map(year => rates[year]);
+
+  switch (method) {
+    case 'latest':
+      return values[0] || 0;
+    case '3-year-average': {
+      const last3 = values.slice(0, 3);
+      return last3.reduce((sum, rate) => sum + rate, 0) / last3.length;
+    }
+    case '5-year-average': {
+      const last5 = values.slice(0, 5);
+      return last5.reduce((sum, rate) => sum + rate, 0) / last5.length;
+    }
+    case 'historical-average':
+      return values.reduce((sum, rate) => sum + rate, 0) / values.length;
+    default:
+      return values[0] || 0;
+  }
 };
 
 export const calculateASBProjection = (
@@ -102,7 +154,9 @@ export const calculateEPFProjection = (
   retirementAge: number = 55,
   employeePercentage: number = 11,
   employerPercentage: number = 12,
-  useTotal: boolean = true
+  useTotal: boolean = true,
+  savingsType: 'Conventional' | 'Syariah' = 'Conventional',
+  rateMethod: 'latest' | '3-year-average' | '5-year-average' | 'historical-average' = 'latest'
 ): {
   projectedBalance: number;
   yearsToRetirement: number;
@@ -112,9 +166,11 @@ export const calculateEPFProjection = (
   monthlyContribution: number;
   employeeContribution: number;
   employerContribution: number;
+  dividendRate: number;
 } => {
   const yearsToRetirement = Math.max(0, retirementAge - currentAge);
-  const avgRate = calculateAverageDividendRate('EPF') / 100;
+  const dividendRate = calculateDividendRateByMethod(savingsType, rateMethod);
+  const avgRate = dividendRate / 100;
 
   const employeeContribution = monthlySalary * (employeePercentage / 100);
   const employerContribution = monthlySalary * (employerPercentage / 100);
@@ -153,6 +209,7 @@ export const calculateEPFProjection = (
     monthlyContribution,
     employeeContribution,
     employerContribution,
+    dividendRate,
   };
 };
 
