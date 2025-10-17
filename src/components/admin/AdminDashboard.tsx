@@ -3,6 +3,10 @@ import { AdminLayout } from './AdminLayout';
 import { AccountConfigPage } from './pages/AccountConfigPage';
 import { GoalConfigPage } from './pages/GoalConfigPage';
 import { DashboardOverview } from './pages/DashboardOverview';
+import { InvestmentRatesPage } from './pages/InvestmentRatesPage';
+import { AchievementsPage } from './pages/AchievementsPage';
+import { SystemRulesPage } from './pages/SystemRulesPage';
+import { AuditLogPage } from './pages/AuditLogPage';
 import { useAdminAuth } from '../../hooks/useConfig';
 
 type AdminPage = 'dashboard' | 'accounts' | 'goals' | 'investments' | 'achievements' | 'system' | 'audit';
@@ -53,6 +57,14 @@ export const AdminDashboard = ({ onExitAdmin }: AdminDashboardProps) => {
         return <AccountConfigPage />;
       case 'goals':
         return <GoalConfigPage />;
+      case 'investments':
+        return <InvestmentRatesPage />;
+      case 'achievements':
+        return <AchievementsPage />;
+      case 'system':
+        return <SystemRulesPage />;
+      case 'audit':
+        return <AuditLogPage />;
       case 'dashboard':
       default:
         return <DashboardOverview onNavigate={(page) => setCurrentPage(page as AdminPage)} />;
