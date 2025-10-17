@@ -404,7 +404,39 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
                 ) : (
                   <div className="space-y-4">
                     {goals.map(goal => (
-                      <GoalProjection key={goal.id} goal={goal} accounts={accounts} monthlyContribution={500} />
+                        <GoalProjection
+                          key={goal.id}
+                          goal={goal}
+                          accounts={accounts}
+                          monthlyContribution={500}
+                          showActions={true}
+                          onUpdateProgress={() => {
+                            setSelectedGoalForProgress(goal);
+                            setShowProgressUpdate(true);
+                          }}
+                          onFullEdit={() => {
+                            setEditGoal(goal);
+                            setShowGoalForm(true);
+                          }}
+                          onMarkComplete={async () => {
+                            try {
+                              const { error } = await supabase
+                                .from('goals')
+                                .update({
+                                  is_achieved: !goal.is_achieved,
+                                  achieved_at: !goal.is_achieved ? new Date().toISOString() : null
+                                })
+                                .eq('id', goal.id);
+                              if (error) throw error;
+                              addToast(goal.is_achieved ? 'Goal marked as incomplete' : 'Congratulations! Goal achieved!', 'success');
+                              loadData();
+                            } catch (err) {
+                              addToast('Failed to update goal status', 'error');
+                            }
+                          }}
+                          onDelete={() => deleteGoal(goal.id)}
+                          onSuccess={loadData}
+                        />
                     ))}
                     {goals.length === 0 && (
                       <div className="text-center py-12 glass-card rounded-3xl">

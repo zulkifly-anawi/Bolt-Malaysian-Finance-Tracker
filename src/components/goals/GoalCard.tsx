@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Edit2, MoreVertical, TrendingUp, Calendar, CheckCircle, Trash2, Eye } from 'lucide-react';
+import { Edit2, MoreVertical, TrendingUp, Calendar, CheckCircle, Eye } from 'lucide-react';
 import { formatCurrency, formatDate, calculateProgress, isGoalOnTrack } from '../../utils/formatters';
 import { QuickEditGoal } from './QuickEditGoal';
 import type { Goal } from '../../types/database';
@@ -133,32 +133,12 @@ export const GoalCard = ({
                 <button
                   onClick={() => {
                     setShowMenu(false);
-                    onFullEdit();
-                  }}
-                  className="w-full px-4 py-3 text-left text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center gap-3"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Full Edit
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
                     onMarkComplete();
                   }}
                   className="w-full px-4 py-3 text-left text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center gap-3"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Mark {goal.is_achieved ? 'Incomplete' : 'Complete'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    onDelete();
-                  }}
-                  className="w-full px-4 py-3 text-left text-red-300 hover:bg-red-500 hover:bg-opacity-20 transition-all flex items-center gap-3"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Goal
                 </button>
               </div>
             </>
