@@ -117,6 +117,10 @@ export interface DividendHistory {
   account_type: string;
   year: number;
   dividend_rate: number;
+  dividend_component: number | null;
+  bonus_component: number | null;
+  notes: string | null;
+  is_historical: boolean;
   created_at: string;
 }
 

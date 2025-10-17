@@ -1,9 +1,9 @@
 export const DIVIDEND_RATES = {
   ASB: {
-    2024: 4.75,
-    2023: 4.50,
-    2022: 4.25,
-    2021: 4.00,
+    2024: 5.75,
+    2023: 5.25,
+    2022: 4.60,
+    2021: 5.00,
     2020: 5.50,
   },
   'Tabung Haji': {
@@ -89,30 +89,53 @@ export const calculateDividendRateByMethod = (
   }
 };
 
+export const ASB_RATES_DETAILED = {
+  2024: { dividend: 5.50, bonus: 0.25, total: 5.75 },
+  2023: { dividend: 4.25, bonus: 1.00, total: 5.25 },
+  2022: { dividend: 3.35, bonus: 1.25, total: 4.60 },
+  2021: { dividend: 4.25, bonus: 0.75, total: 5.00 },
+  2020: { dividend: 5.50, bonus: 0.00, total: 5.50 },
+};
+
+export const calculateASBDividendByUnits = (
+  unitsHeld: number,
+  dividendRatePerUnit: number
+): number => {
+  return (unitsHeld * dividendRatePerUnit) / 100;
+};
+
 export const calculateASBProjection = (
   currentBalance: number,
   unitsHeld: number,
   monthlyContribution: number,
   years: number
-): { projectedBalance: number; totalDividends: number; totalContributions: number } => {
-  const avgRate = calculateAverageDividendRate('ASB') / 100;
+): { projectedBalance: number; totalDividends: number; totalContributions: number; yearlyBreakdown: Array<{year: number; balance: number; dividend: number}> } => {
+  const currentYearRate = DIVIDEND_RATES.ASB[2024] / 100;
   let balance = currentBalance;
   let totalDividends = 0;
   let totalContributions = monthlyContribution * 12 * years;
+  const yearlyBreakdown: Array<{year: number; balance: number; dividend: number}> = [];
 
   for (let year = 0; year < years; year++) {
     const annualContribution = monthlyContribution * 12;
     balance += annualContribution;
 
-    const dividend = balance * avgRate;
+    const dividend = balance * currentYearRate;
     totalDividends += dividend;
     balance += dividend;
+
+    yearlyBreakdown.push({
+      year: new Date().getFullYear() + year + 1,
+      balance,
+      dividend,
+    });
   }
 
   return {
     projectedBalance: balance,
     totalDividends,
     totalContributions,
+    yearlyBreakdown,
   };
 };
 
