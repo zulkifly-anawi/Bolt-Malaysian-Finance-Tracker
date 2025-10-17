@@ -133,38 +133,39 @@ export const NotificationsPanel = () => {
             className="fixed inset-0 z-40"
             onClick={() => setShowPanel(false)}
           />
-          <div className="absolute right-0 mt-2 w-96 max-h-[600px] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50">
-              <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                <Bell className="w-5 h-5 text-blue-600" />
-                Notifications
+          <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-h-[70vh] sm:max-h-[600px] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden flex flex-col">
+            <div className="p-3 sm:p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-teal-50 to-cyan-50">
+              <h3 className="font-bold text-gray-900 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
+                <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" />
+                <span className="truncate">Notifications</span>
               </h3>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    className="text-xs text-teal-600 hover:text-teal-700 font-medium whitespace-nowrap min-h-[44px] sm:min-h-0 flex items-center px-1"
                   >
-                    Mark all read
+                    <span className="hidden sm:inline">Mark all read</span>
+                    <span className="sm:hidden">Mark read</span>
                   </button>
                 )}
                 <button
                   onClick={() => setShowPanel(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center sm:min-h-0 sm:min-w-0"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto">
               {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="flex items-center justify-center py-8 sm:py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
                 </div>
               ) : notifications.length === 0 ? (
-                <div className="text-center py-12 px-4">
-                  <BellOff className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <div className="text-center py-8 sm:py-12 px-4">
+                  <BellOff className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3" />
                   <p className="text-gray-600 text-sm">No notifications yet</p>
                 </div>
               ) : (
@@ -172,37 +173,37 @@ export const NotificationsPanel = () => {
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-4 hover:bg-gray-50 transition-colors ${
-                        !notification.is_read ? 'bg-blue-50' : ''
+                      className={`p-3 sm:p-4 hover:bg-gray-50 transition-colors ${
+                        !notification.is_read ? 'bg-teal-50' : ''
                       }`}
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-2 sm:gap-3">
                         <div className="flex-shrink-0 mt-1">
                           {getIcon(notification.notification_type)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-1">
-                            <h4 className="font-semibold text-gray-900 text-sm">
+                            <h4 className="font-semibold text-gray-900 text-sm break-words">
                               {notification.title}
                             </h4>
                             <button
                               onClick={() => deleteNotification(notification.id)}
-                              className="text-gray-400 hover:text-gray-600"
+                              className="text-gray-400 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center sm:min-h-0 sm:min-w-0 flex-shrink-0"
                             >
                               <X className="w-4 h-4" />
                             </button>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">
+                          <p className="text-sm text-gray-600 mb-2 break-words">
                             {notification.message}
                           </p>
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
                             <span className="text-xs text-gray-500">
                               {formatDate(notification.created_at)}
                             </span>
                             {!notification.is_read && (
                               <button
                                 onClick={() => markAsRead(notification.id)}
-                                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                                className="text-xs text-teal-600 hover:text-teal-700 font-medium min-h-[44px] sm:min-h-0 flex items-center whitespace-nowrap"
                               >
                                 Mark as read
                               </button>
