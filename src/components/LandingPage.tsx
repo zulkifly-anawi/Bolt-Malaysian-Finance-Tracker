@@ -115,7 +115,7 @@ export const LandingPage = ({ onGetStarted }: LandingPageProps) => {
 
         <div className="mt-12 text-center">
           <p className="text-white text-opacity-60 text-sm">
-            100% Free • No Credit Card Required • Your Data Stays Private
+            Free for limited time • Your Data Stays Private
           </p>
         </div>
       </div>
