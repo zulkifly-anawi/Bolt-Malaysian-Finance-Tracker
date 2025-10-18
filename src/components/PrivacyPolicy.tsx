@@ -138,7 +138,7 @@ export const PrivacyPolicy = () => {
               </li>
               <li className="flex gap-3">
                 <span className="text-cyan-400 mt-1">•</span>
-                <span>Export your data in CSV or JSON format</span>
+                <span>Export your data in CSV</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-cyan-400 mt-1">•</span>
