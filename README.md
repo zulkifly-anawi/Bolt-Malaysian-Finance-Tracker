@@ -32,7 +32,7 @@ A comprehensive financial tracking platform built specifically for Malaysians to
 - **Achievements & Badges**: Earn rewards for consistent tracking
 - **Smart Insights**: Personalized financial recommendations
 - **Notifications**: Goal milestones and balance update reminders
-- **Data Export**: Export your data in CSV or JSON format
+- **Data Export**: Export your data in CSV format
 
 ### User Experience
 - **Interactive Onboarding**: 4-step guided tour for new users
