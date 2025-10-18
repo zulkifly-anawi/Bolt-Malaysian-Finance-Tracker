@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User achievements tracking
 - Notifications for goal milestones
 - Smart insights and personalized tips
-- Data export in CSV and JSON formats
+- Data export in CSV format
 - Feedback collection system with ratings
 - Balance update reminders
 
