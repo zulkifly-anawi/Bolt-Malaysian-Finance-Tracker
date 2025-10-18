@@ -97,7 +97,7 @@ const faqs: FAQItem[] = [
   {
     category: 'Features',
     question: 'Can I export my data?',
-    answer: 'Yes! Use the Export Data feature to download your accounts and goals data in CSV or JSON format for your records or analysis.',
+    answer: 'Yes! Use the Export Data feature to download your accounts and goals data in CSV format for your records or analysis.',
   },
   {
     category: 'Features',
