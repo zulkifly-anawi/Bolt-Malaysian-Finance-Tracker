@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { auditService } from '../../../services/auditService';
 
 interface AdminEmail {
   id: string;
@@ -44,6 +45,19 @@ export const AdminEmailsPage = () => {
       setError(error.message);
       return;
     }
+    // audit log
+    try {
+      await auditService.logAction({
+        action_type: 'CREATE',
+        table_name: 'admin_authorized_emails',
+        record_id: email,
+        old_value: null,
+        new_value: { email },
+      });
+    } catch (e) {
+      // non-blocking
+      console.warn('Audit log failed:', e);
+    }
     setNewEmail('');
     loadEmails();
   };
@@ -57,6 +71,17 @@ export const AdminEmailsPage = () => {
     if (error) {
       setError(error.message);
       return;
+    }
+    try {
+      await auditService.logAction({
+        action_type: 'DELETE',
+        table_name: 'admin_authorized_emails',
+        record_id: id,
+        old_value: { id },
+        new_value: null,
+      });
+    } catch (e) {
+      console.warn('Audit log failed:', e);
     }
     setEmails((prev) => prev.filter((e) => e.id !== id));
   };
