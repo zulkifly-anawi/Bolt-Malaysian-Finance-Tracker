@@ -35,6 +35,7 @@ const navItems: NavItem[] = [
   { id: 'achievements', label: 'Achievements', icon: Trophy },
   { id: 'system', label: 'System Rules', icon: Settings },
   { id: 'audit', label: 'Audit Log', icon: FileText },
+  { id: 'adminEmails', label: 'Admin Emails', icon: Shield },
 ];
 
 export const AdminLayout = ({ children, currentPage = 'dashboard', onPageChange, onExitAdmin }: AdminLayoutProps) => {
