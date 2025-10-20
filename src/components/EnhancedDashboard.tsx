@@ -34,7 +34,7 @@ interface EnhancedDashboardProps {
 
 export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {}) => {
   const { signOut, user } = useAuth();
-  const { isAdmin } = useAdminAuth();
+  const { isAdmin, refetch: refetchAdmin } = useAdminAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [goals, setGoals] = useState<Goal[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -205,8 +205,8 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
             </h1>
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <NotificationsPanel />
-              {isAdmin && onEnterAdmin && (
-                <button onClick={onEnterAdmin} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 text-white text-opacity-90 hover:text-opacity-100 glass-button rounded-xl transition-all">
+              {onEnterAdmin && (
+                <button onClick={async () => { await refetchAdmin(); if (isAdmin) onEnterAdmin(); }} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 text-white text-opacity-90 hover:text-opacity-100 glass-button rounded-xl transition-all">
                   <Shield className="w-4 h-4 flex-shrink-0" />
                   <span className="hidden md:inline text-sm">Admin</span>
                 </button>

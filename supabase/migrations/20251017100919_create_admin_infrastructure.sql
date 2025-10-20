@@ -150,6 +150,16 @@ BEGIN
   END IF;
 END $$;
 
+-- Admin override policies for selected tables
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'goals' AND policyname = 'Admins can manage all goals'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Admins can manage all goals" ON public.goals FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin())';
+  END IF;
+END $$;
+
 DO $$
 BEGIN
   IF NOT EXISTS (
