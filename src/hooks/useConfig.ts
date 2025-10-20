@@ -171,21 +171,20 @@ export function useAdminAuth() {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
 
-      if (!user || !user.email) {
+      if (!user) {
         setIsAdmin(false);
         return;
       }
 
-      const { data } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .maybeSingle();
+      // Ask the backend to evaluate admin status securely
+      const { data: rpcData, error: rpcError } = await supabase.rpc('is_admin');
+      if (rpcError) {
+        console.error('is_admin RPC failed:', rpcError);
+        setIsAdmin(false);
+        return;
+      }
 
-      const hasAdminFlag = data?.is_admin || false;
-      const hasAuthorizedEmail = user.email.toLowerCase() === 'zulkifly.anawi@gmail.com';
-
-      setIsAdmin(hasAdminFlag && hasAuthorizedEmail);
+      setIsAdmin(Boolean(rpcData));
     } catch (error) {
       console.error('Failed to check admin status:', error);
       setIsAdmin(false);
