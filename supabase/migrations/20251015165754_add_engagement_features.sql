@@ -71,16 +71,30 @@ CREATE TABLE IF NOT EXISTS user_achievements (
 );
 
 ALTER TABLE user_achievements ENABLE ROW LEVEL SECURITY;
+-- Create policies only if they don't already exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'user_achievements'
+      AND policyname = 'Users can view own achievements'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view own achievements" ON user_achievements FOR SELECT TO authenticated USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY "Users can view own achievements"
-  ON user_achievements FOR SELECT
-  TO authenticated
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own achievements"
-  ON user_achievements FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'user_achievements'
+      AND policyname = 'Users can insert own achievements'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can insert own achievements" ON user_achievements FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id)';
+  END IF;
+END $$;
 
 -- Create reminders table
 CREATE TABLE IF NOT EXISTS reminders (
@@ -98,12 +112,18 @@ CREATE TABLE IF NOT EXISTS reminders (
 );
 
 ALTER TABLE reminders ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can manage own reminders"
-  ON reminders FOR ALL
-  TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+-- Create policy only if it doesn't already exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'reminders'
+      AND policyname = 'Users can manage own reminders'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can manage own reminders" ON reminders FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)';
+  END IF;
+END $$;
 
 -- Create notifications table
 CREATE TABLE IF NOT EXISTS notifications (
@@ -119,22 +139,42 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+-- Create policies only if they don't already exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'notifications'
+      AND policyname = 'Users can view own notifications'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view own notifications" ON notifications FOR SELECT TO authenticated USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY "Users can view own notifications"
-  ON notifications FOR SELECT
-  TO authenticated
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'notifications'
+      AND policyname = 'Users can update own notifications'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can update own notifications" ON notifications FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update own notifications"
-  ON notifications FOR UPDATE
-  TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own notifications"
-  ON notifications FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'notifications'
+      AND policyname = 'Users can insert own notifications'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can insert own notifications" ON notifications FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id)';
+  END IF;
+END $$;
 
 -- Create monthly summaries table
 CREATE TABLE IF NOT EXISTS monthly_summaries (
@@ -155,16 +195,30 @@ CREATE TABLE IF NOT EXISTS monthly_summaries (
 );
 
 ALTER TABLE monthly_summaries ENABLE ROW LEVEL SECURITY;
+-- Create policies only if they don't already exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'monthly_summaries'
+      AND policyname = 'Users can view own summaries'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view own summaries" ON monthly_summaries FOR SELECT TO authenticated USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY "Users can view own summaries"
-  ON monthly_summaries FOR SELECT
-  TO authenticated
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert own summaries"
-  ON monthly_summaries FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'monthly_summaries'
+      AND policyname = 'Users can insert own summaries'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can insert own summaries" ON monthly_summaries FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id)';
+  END IF;
+END $$;
 
 -- Create family members table (for future premium feature)
 CREATE TABLE IF NOT EXISTS family_members (
@@ -182,12 +236,18 @@ CREATE TABLE IF NOT EXISTS family_members (
 );
 
 ALTER TABLE family_members ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can manage own family members"
-  ON family_members FOR ALL
-  TO authenticated
-  USING (auth.uid() = primary_user_id OR auth.uid() = member_user_id)
-  WITH CHECK (auth.uid() = primary_user_id);
+-- Create policy only if it doesn't already exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'family_members'
+      AND policyname = 'Users can manage own family members'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can manage own family members" ON family_members FOR ALL TO authenticated USING (auth.uid() = primary_user_id OR auth.uid() = member_user_id) WITH CHECK (auth.uid() = primary_user_id)';
+  END IF;
+END $$;
 
 -- Insert achievement definitions
 CREATE TABLE IF NOT EXISTS achievement_definitions (
@@ -202,11 +262,18 @@ CREATE TABLE IF NOT EXISTS achievement_definitions (
 );
 
 ALTER TABLE achievement_definitions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Anyone can read achievement definitions"
-  ON achievement_definitions FOR SELECT
-  TO authenticated
-  USING (true);
+-- Create policy only if it doesn't already exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'achievement_definitions'
+      AND policyname = 'Anyone can read achievement definitions'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Anyone can read achievement definitions" ON achievement_definitions FOR SELECT TO authenticated USING (true)';
+  END IF;
+END $$;
 
 -- Insert achievement definitions
 INSERT INTO achievement_definitions (achievement_type, name, description, icon, criteria, points) VALUES

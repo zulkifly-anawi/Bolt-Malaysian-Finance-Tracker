@@ -74,26 +74,41 @@ CREATE TABLE IF NOT EXISTS goal_progress_entries (
 ALTER TABLE goal_progress_entries ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for goal_progress_entries
-CREATE POLICY "Users can insert own progress entries"
-  ON goal_progress_entries FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'goal_progress_entries'
+      AND policyname = 'Users can insert own progress entries'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can insert own progress entries" ON goal_progress_entries FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY "Users can view own progress entries"
-  ON goal_progress_entries FOR SELECT
-  TO authenticated
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'goal_progress_entries'
+      AND policyname = 'Users can view own progress entries'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view own progress entries" ON goal_progress_entries FOR SELECT TO authenticated USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
-CREATE POLICY "Users can view progress entries for their goals"
-  ON goal_progress_entries FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM goals
-      WHERE goals.id = goal_progress_entries.goal_id
-      AND goals.user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'goal_progress_entries'
+      AND policyname = 'Users can view progress entries for their goals'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view progress entries for their goals" ON goal_progress_entries FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM goals WHERE goals.id = goal_progress_entries.goal_id AND goals.user_id = auth.uid()))';
+  END IF;
+END $$;
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_goal_progress_entries_goal_id 

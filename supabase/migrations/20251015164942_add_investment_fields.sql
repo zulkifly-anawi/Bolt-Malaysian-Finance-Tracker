@@ -70,10 +70,21 @@ CREATE TABLE IF NOT EXISTS dividend_history (
 
 ALTER TABLE dividend_history ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can read dividend history"
-  ON dividend_history FOR SELECT
-  TO authenticated
-  USING (true);
+-- Create policy only if it doesn't already exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'dividend_history'
+      AND policyname = 'Anyone can read dividend history'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Anyone can read dividend history"\n'
+         || '  ON dividend_history FOR SELECT\n'
+         || '  TO authenticated\n'
+         || '  USING (true)';
+  END IF;
+END $$;
 
 -- Insert historical dividend data
 INSERT INTO dividend_history (account_type, year, dividend_rate) VALUES
@@ -107,10 +118,21 @@ CREATE TABLE IF NOT EXISTS goal_templates (
 
 ALTER TABLE goal_templates ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can read goal templates"
-  ON goal_templates FOR SELECT
-  TO authenticated
-  USING (true);
+-- Create policy only if it doesn't already exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'goal_templates'
+      AND policyname = 'Anyone can read goal templates'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Anyone can read goal templates"\n'
+         || '  ON goal_templates FOR SELECT\n'
+         || '  TO authenticated\n'
+         || '  USING (true)';
+  END IF;
+END $$;
 
 -- Insert Malaysian goal templates
 INSERT INTO goal_templates (name, description, category, default_amount, icon) VALUES

@@ -42,18 +42,30 @@ CREATE TABLE IF NOT EXISTS user_feedback (
 ALTER TABLE user_feedback ENABLE ROW LEVEL SECURITY;
 
 -- Allow anyone to insert feedback (authenticated or anonymous)
-CREATE POLICY "Anyone can submit feedback"
-  ON user_feedback
-  FOR INSERT
-  TO public
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'user_feedback'
+      AND policyname = 'Anyone can submit feedback'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Anyone can submit feedback" ON user_feedback FOR INSERT TO public WITH CHECK (true)';
+  END IF;
+END $$;
 
 -- Users can read their own feedback
-CREATE POLICY "Users can read own feedback"
-  ON user_feedback
-  FOR SELECT
-  TO authenticated
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'user_feedback'
+      AND policyname = 'Users can read own feedback'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can read own feedback" ON user_feedback FOR SELECT TO authenticated USING (auth.uid() = user_id)';
+  END IF;
+END $$;
 
 -- Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_user_feedback_user_id ON user_feedback(user_id);

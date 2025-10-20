@@ -14,8 +14,7 @@
     4. Update RLS policies to use enhanced validation
 */
 
--- Drop existing function to recreate with email validation
-DROP FUNCTION IF EXISTS is_admin();
+-- Note: Do not drop is_admin() as policies depend on it; use CREATE OR REPLACE below
 
 -- Create enhanced function to check if user is admin AND has authorized email
 CREATE OR REPLACE FUNCTION is_admin()

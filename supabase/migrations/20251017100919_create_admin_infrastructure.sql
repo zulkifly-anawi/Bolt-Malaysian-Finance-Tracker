@@ -84,26 +84,45 @@ CREATE TABLE IF NOT EXISTS admin_config_account_types (
 
 ALTER TABLE admin_config_account_types ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can read account types"
-  ON admin_config_account_types FOR SELECT
-  TO authenticated
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_account_types' AND policyname = 'Anyone can read account types'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Anyone can read account types" ON admin_config_account_types FOR SELECT TO authenticated USING (true)';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can insert account types"
-  ON admin_config_account_types FOR INSERT
-  TO authenticated
-  WITH CHECK (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_account_types' AND policyname = 'Only admins can insert account types'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can insert account types" ON admin_config_account_types FOR INSERT TO authenticated WITH CHECK (is_admin())';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can update account types"
-  ON admin_config_account_types FOR UPDATE
-  TO authenticated
-  USING (is_admin())
-  WITH CHECK (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_account_types' AND policyname = 'Only admins can update account types'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can update account types" ON admin_config_account_types FOR UPDATE TO authenticated USING (is_admin()) WITH CHECK (is_admin())';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can delete account types"
-  ON admin_config_account_types FOR DELETE
-  TO authenticated
-  USING (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_account_types' AND policyname = 'Only admins can delete account types'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can delete account types" ON admin_config_account_types FOR DELETE TO authenticated USING (is_admin())';
+  END IF;
+END $$;
 
 -- Create admin_config_institutions table
 CREATE TABLE IF NOT EXISTS admin_config_institutions (
@@ -121,26 +140,45 @@ CREATE TABLE IF NOT EXISTS admin_config_institutions (
 
 ALTER TABLE admin_config_institutions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can read institutions"
-  ON admin_config_institutions FOR SELECT
-  TO authenticated
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_institutions' AND policyname = 'Anyone can read institutions'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Anyone can read institutions" ON admin_config_institutions FOR SELECT TO authenticated USING (true)';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can insert institutions"
-  ON admin_config_institutions FOR INSERT
-  TO authenticated
-  WITH CHECK (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_institutions' AND policyname = 'Only admins can insert institutions'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can insert institutions" ON admin_config_institutions FOR INSERT TO authenticated WITH CHECK (is_admin())';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can update institutions"
-  ON admin_config_institutions FOR UPDATE
-  TO authenticated
-  USING (is_admin())
-  WITH CHECK (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_institutions' AND policyname = 'Only admins can update institutions'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can update institutions" ON admin_config_institutions FOR UPDATE TO authenticated USING (is_admin()) WITH CHECK (is_admin())';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can delete institutions"
-  ON admin_config_institutions FOR DELETE
-  TO authenticated
-  USING (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_institutions' AND policyname = 'Only admins can delete institutions'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can delete institutions" ON admin_config_institutions FOR DELETE TO authenticated USING (is_admin())';
+  END IF;
+END $$;
 
 -- Create admin_config_goal_categories table
 CREATE TABLE IF NOT EXISTS admin_config_goal_categories (
@@ -159,26 +197,45 @@ CREATE TABLE IF NOT EXISTS admin_config_goal_categories (
 
 ALTER TABLE admin_config_goal_categories ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can read goal categories"
-  ON admin_config_goal_categories FOR SELECT
-  TO authenticated
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_goal_categories' AND policyname = 'Anyone can read goal categories'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Anyone can read goal categories" ON admin_config_goal_categories FOR SELECT TO authenticated USING (true)';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can insert goal categories"
-  ON admin_config_goal_categories FOR INSERT
-  TO authenticated
-  WITH CHECK (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_goal_categories' AND policyname = 'Only admins can insert goal categories'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can insert goal categories" ON admin_config_goal_categories FOR INSERT TO authenticated WITH CHECK (is_admin())';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can update goal categories"
-  ON admin_config_goal_categories FOR UPDATE
-  TO authenticated
-  USING (is_admin())
-  WITH CHECK (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_goal_categories' AND policyname = 'Only admins can update goal categories'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can update goal categories" ON admin_config_goal_categories FOR UPDATE TO authenticated USING (is_admin()) WITH CHECK (is_admin())';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can delete goal categories"
-  ON admin_config_goal_categories FOR DELETE
-  TO authenticated
-  USING (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_goal_categories' AND policyname = 'Only admins can delete goal categories'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can delete goal categories" ON admin_config_goal_categories FOR DELETE TO authenticated USING (is_admin())';
+  END IF;
+END $$;
 
 -- Create admin_config_validation_rules table
 CREATE TABLE IF NOT EXISTS admin_config_validation_rules (
@@ -197,26 +254,45 @@ CREATE TABLE IF NOT EXISTS admin_config_validation_rules (
 
 ALTER TABLE admin_config_validation_rules ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can read validation rules"
-  ON admin_config_validation_rules FOR SELECT
-  TO authenticated
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_validation_rules' AND policyname = 'Anyone can read validation rules'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Anyone can read validation rules" ON admin_config_validation_rules FOR SELECT TO authenticated USING (true)';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can insert validation rules"
-  ON admin_config_validation_rules FOR INSERT
-  TO authenticated
-  WITH CHECK (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_validation_rules' AND policyname = 'Only admins can insert validation rules'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can insert validation rules" ON admin_config_validation_rules FOR INSERT TO authenticated WITH CHECK (is_admin())';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can update validation rules"
-  ON admin_config_validation_rules FOR UPDATE
-  TO authenticated
-  USING (is_admin())
-  WITH CHECK (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_validation_rules' AND policyname = 'Only admins can update validation rules'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can update validation rules" ON admin_config_validation_rules FOR UPDATE TO authenticated USING (is_admin()) WITH CHECK (is_admin())';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can delete validation rules"
-  ON admin_config_validation_rules FOR DELETE
-  TO authenticated
-  USING (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_validation_rules' AND policyname = 'Only admins can delete validation rules'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can delete validation rules" ON admin_config_validation_rules FOR DELETE TO authenticated USING (is_admin())';
+  END IF;
+END $$;
 
 -- Create admin_config_system_settings table
 CREATE TABLE IF NOT EXISTS admin_config_system_settings (
@@ -235,26 +311,45 @@ CREATE TABLE IF NOT EXISTS admin_config_system_settings (
 
 ALTER TABLE admin_config_system_settings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can read system settings"
-  ON admin_config_system_settings FOR SELECT
-  TO authenticated
-  USING (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_system_settings' AND policyname = 'Anyone can read system settings'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Anyone can read system settings" ON admin_config_system_settings FOR SELECT TO authenticated USING (true)';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can insert system settings"
-  ON admin_config_system_settings FOR INSERT
-  TO authenticated
-  WITH CHECK (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_system_settings' AND policyname = 'Only admins can insert system settings'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can insert system settings" ON admin_config_system_settings FOR INSERT TO authenticated WITH CHECK (is_admin())';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can update system settings"
-  ON admin_config_system_settings FOR UPDATE
-  TO authenticated
-  USING (is_admin())
-  WITH CHECK (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_system_settings' AND policyname = 'Only admins can update system settings'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can update system settings" ON admin_config_system_settings FOR UPDATE TO authenticated USING (is_admin()) WITH CHECK (is_admin())';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can delete system settings"
-  ON admin_config_system_settings FOR DELETE
-  TO authenticated
-  USING (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_config_system_settings' AND policyname = 'Only admins can delete system settings'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can delete system settings" ON admin_config_system_settings FOR DELETE TO authenticated USING (is_admin())';
+  END IF;
+END $$;
 
 -- Create admin_audit_log table with 7-year retention tracking
 CREATE TABLE IF NOT EXISTS admin_audit_log (
@@ -273,15 +368,25 @@ CREATE TABLE IF NOT EXISTS admin_audit_log (
 
 ALTER TABLE admin_audit_log ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Only admins can read audit log"
-  ON admin_audit_log FOR SELECT
-  TO authenticated
-  USING (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_audit_log' AND policyname = 'Only admins can read audit log'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can read audit log" ON admin_audit_log FOR SELECT TO authenticated USING (is_admin())';
+  END IF;
+END $$;
 
-CREATE POLICY "Only admins can insert audit log"
-  ON admin_audit_log FOR INSERT
-  TO authenticated
-  WITH CHECK (is_admin());
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'admin_audit_log' AND policyname = 'Only admins can insert audit log'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Only admins can insert audit log" ON admin_audit_log FOR INSERT TO authenticated WITH CHECK (is_admin())';
+  END IF;
+END $$;
 
 -- Create view for audit log with retention date calculation
 CREATE OR REPLACE VIEW admin_audit_log_with_retention AS
