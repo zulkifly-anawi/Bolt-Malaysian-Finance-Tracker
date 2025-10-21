@@ -91,6 +91,7 @@ export const checkAchievements = async (
 
   for (const achievement of achievements) {
     if (achievement.earned && !earned.has(achievement.type)) {
+      console.log('Awarding new achievement:', achievement.type, achievement.name);
       await awardAchievement(userId, achievement);
     }
   }
@@ -102,7 +103,7 @@ export const awardAchievement = async (
   userId: string,
   achievement: { type: string; name: string; description: string; icon: string }
 ) => {
-  const { error } = await supabase.from('user_achievements').insert({
+  const { error: achievementError } = await supabase.from('user_achievements').insert({
     user_id: userId,
     achievement_type: achievement.type,
     achievement_name: achievement.name,
@@ -110,14 +111,21 @@ export const awardAchievement = async (
     icon: achievement.icon,
   });
 
-  if (!error) {
-    await supabase.from('notifications').insert({
-      user_id: userId,
-      notification_type: 'achievement',
-      title: `New Achievement Unlocked!`,
-      message: `Congratulations! You've earned the "${achievement.name}" badge.`,
-      metadata: { achievement_type: achievement.type },
-    });
+  if (achievementError) {
+    console.error('Failed to insert achievement:', achievementError);
+    return;
+  }
+
+  const { error: notificationError } = await supabase.from('notifications').insert({
+    user_id: userId,
+    notification_type: 'achievement',
+    title: `New Achievement Unlocked!`,
+    message: `Congratulations! You've earned the "${achievement.name}" badge.`,
+    metadata: { achievement_type: achievement.type },
+  });
+
+  if (notificationError) {
+    console.error('Failed to insert notification:', notificationError);
   }
 };
 

@@ -27,6 +27,7 @@ import { ToastContainer } from './common/ToastContainer';
 import type { ToastProps } from './common/Toast';
 import type { Goal, Account, Achievement } from '../types/database';
 import { useAdminAuth } from '../hooks/useConfig';
+import { checkAchievements } from '../utils/achievementChecker';
 
 interface EnhancedDashboardProps {
   onEnterAdmin?: () => void;
@@ -40,6 +41,7 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [showGoalTemplates, setShowGoalTemplates] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
@@ -59,7 +61,26 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
   useEffect(() => {
     loadData();
     checkOnboarding();
+    checkAdminStatus();
   }, [user]);
+
+  const checkAdminStatus = async () => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    try {
+      const { data, error } = await supabase.rpc('is_admin');
+      if (!error && data) {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+    } catch (e) {
+      console.error('Failed to check admin status:', e);
+      setIsAdmin(false);
+    }
+  };
 
   const checkOnboarding = async () => {
     if (!user) return;
@@ -205,23 +226,13 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
             </h1>
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <NotificationsPanel />
-              {onEnterAdmin && (
+              {onEnterAdmin && isAdmin && (
                 <button
-                  onClick={async () => {
-                    try {
-                      const { data: isAdminNow, error } = await supabase.rpc('is_admin');
-                      if (error) {
-                        console.error('is_admin RPC error:', error);
-                        return;
-                      }
-                      if (isAdminNow) {
-                        onEnterAdmin();
-                      }
-                    } catch (e) {
-                      console.error('Admin check failed:', e);
-                    }
+                  onClick={() => {
+                    onEnterAdmin();
                   }}
                   className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 text-white text-opacity-90 hover:text-opacity-100 glass-button rounded-xl transition-all"
+                  title="Access Admin Panel"
                 >
                   <Shield className="w-4 h-4 flex-shrink-0" />
                   <span className="hidden md:inline text-sm">Admin</span>
@@ -356,6 +367,7 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
                             onDelete={() => deleteGoal(goal.id)}
                             onMarkComplete={async () => {
                               try {
+                                const wasAchieved = goal.is_achieved;
                                 const { error } = await supabase
                                   .from('goals')
                                   .update({
@@ -365,7 +377,19 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
                                   .eq('id', goal.id);
                                 if (error) throw error;
                                 addToast(goal.is_achieved ? 'Goal marked as incomplete' : 'Congratulations! Goal achieved!', 'success');
-                                loadData();
+                                
+                                // Check for new achievements when marking goal as complete (before loadData to get fresh data)
+                                if (!wasAchieved && user) {
+                                  // Fetch fresh data for achievement check
+                                  const [freshGoals, freshAccounts] = await Promise.all([
+                                    supabase.from('goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+                                    supabase.from('accounts').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+                                  ]);
+                                  const freshNetWorth = (freshAccounts.data || []).reduce((sum, acc) => sum + acc.current_balance, 0);
+                                  await checkAchievements(user.id, freshNetWorth, freshAccounts.data || [], freshGoals.data || []);
+                                }
+                                
+                                await loadData();
                               } catch (err) {
                                 addToast('Failed to update goal status', 'error');
                               }
@@ -436,6 +460,7 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
                           }}
                           onMarkComplete={async () => {
                             try {
+                              const wasAchieved = goal.is_achieved;
                               const { error } = await supabase
                                 .from('goals')
                                 .update({
@@ -445,7 +470,19 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
                                 .eq('id', goal.id);
                               if (error) throw error;
                               addToast(goal.is_achieved ? 'Goal marked as incomplete' : 'Congratulations! Goal achieved!', 'success');
-                              loadData();
+                              
+                              // Check for new achievements when marking goal as complete (before loadData to get fresh data)
+                              if (!wasAchieved && user) {
+                                // Fetch fresh data for achievement check
+                                const [freshGoals, freshAccounts] = await Promise.all([
+                                  supabase.from('goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+                                  supabase.from('accounts').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+                                ]);
+                                const freshNetWorth = (freshAccounts.data || []).reduce((sum, acc) => sum + acc.current_balance, 0);
+                                await checkAchievements(user.id, freshNetWorth, freshAccounts.data || [], freshGoals.data || []);
+                              }
+                              
+                              await loadData();
                             } catch (err) {
                               addToast('Failed to update goal status', 'error');
                             }
