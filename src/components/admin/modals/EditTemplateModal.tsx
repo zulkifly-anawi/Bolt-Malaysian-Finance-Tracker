@@ -16,9 +16,10 @@ interface EditTemplateModalProps {
   template: GoalTemplate | null;
   onClose: () => void;
   onSave: (id: string, data: Partial<GoalTemplate>) => Promise<void>;
+  onCreate: (data: Omit<GoalTemplate, 'id' | 'created_by' | 'updated_by' | 'created_at' | 'updated_at'>) => Promise<void>;
 }
 
-export const EditTemplateModal = ({ isOpen, template, onClose, onSave }: EditTemplateModalProps) => {
+export const EditTemplateModal = ({ isOpen, template, onClose, onSave, onCreate }: EditTemplateModalProps) => {
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -39,16 +40,29 @@ export const EditTemplateModal = ({ isOpen, template, onClose, onSave }: EditTem
         is_active: template.is_active,
         sort_order: template.sort_order,
       });
+    } else {
+      setFormData({
+        name: '',
+        category: '',
+        description: '',
+        default_amount: 0,
+        is_active: true,
+        sort_order: 0,
+      });
     }
-  }, [template]);
+  }, [template, isOpen]);
 
-  if (!isOpen || !template) return null;
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await onSave(template.id, formData);
+      if (template) {
+        await onSave(template.id, formData);
+      } else {
+        await onCreate(formData);
+      }
       onClose();
     } catch (error) {
       console.error('Failed to save template:', error);
@@ -61,7 +75,7 @@ export const EditTemplateModal = ({ isOpen, template, onClose, onSave }: EditTem
     <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="glass-strong rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-white border-opacity-20">
         <div className="flex items-start justify-between mb-6">
-          <h3 className="text-2xl font-bold text-white">Edit Goal Template</h3>
+          <h3 className="text-2xl font-bold text-white">{template ? 'Edit' : 'Add'} Goal Template</h3>
           <button
             onClick={onClose}
             className="text-white text-opacity-60 hover:text-opacity-100 transition-all"
@@ -163,7 +177,7 @@ export const EditTemplateModal = ({ isOpen, template, onClose, onSave }: EditTem
               disabled={saving}
               className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-3 rounded-xl text-white font-medium hover:scale-105 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? 'Saving...' : template ? 'Update' : 'Create'}
             </button>
           </div>
         </form>

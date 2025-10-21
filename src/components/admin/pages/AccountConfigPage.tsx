@@ -2,12 +2,32 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { adminConfigService } from '../../../services/adminConfigService';
 import type { AccountType, Institution } from '../../../services/configService';
+import { EditAccountTypeModal } from '../modals/EditAccountTypeModal';
+import { EditInstitutionModal } from '../modals/EditInstitutionModal';
+import { ConfirmDialog } from '../../ConfirmDialog';
+import { ToastContainer } from '../../common/ToastContainer';
+import type { ToastProps } from '../../common/Toast';
 
 export const AccountConfigPage = () => {
   const [activeTab, setActiveTab] = useState<'types' | 'institutions'>('types');
   const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Modal states
+  const [editingAccountType, setEditingAccountType] = useState<AccountType | null>(null);
+  const [editingInstitution, setEditingInstitution] = useState<Institution | null>(null);
+  const [showAccountTypeModal, setShowAccountTypeModal] = useState(false);
+  const [showInstitutionModal, setShowInstitutionModal] = useState(false);
+
+  // Toast and dialog states
+  const [toasts, setToasts] = useState<ToastProps[]>([]);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    type: 'account_type' | 'institution';
+    id: string;
+    name: string;
+  }>({ isOpen: false, type: 'account_type', id: '', name: '' });
 
   useEffect(() => {
     loadData();
@@ -24,9 +44,99 @@ export const AccountConfigPage = () => {
       setInstitutions(insts || []);
     } catch (error) {
       console.error('Failed to load configuration:', error);
+      showToast('Failed to load configuration', 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    const id = Date.now().toString();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  };
+
+  // Account Type Handlers
+  const handleCreateAccountType = async (data: Omit<AccountType, 'id' | 'created_by' | 'updated_by' | 'created_at' | 'updated_at'>) => {
+    try {
+      await adminConfigService.createAccountType(data);
+      await loadData();
+      showToast('Account type created successfully', 'success');
+    } catch (error) {
+      console.error('Failed to create account type:', error);
+      showToast('Failed to create account type', 'error');
+      throw error;
+    }
+  };
+
+  const handleEditAccountType = async (id: string, data: Partial<AccountType>) => {
+    try {
+      await adminConfigService.updateAccountType(id, data);
+      await loadData();
+      showToast('Account type updated successfully', 'success');
+    } catch (error) {
+      console.error('Failed to update account type:', error);
+      showToast('Failed to update account type', 'error');
+      throw error;
+    }
+  };
+
+  const handleDeleteAccountType = async () => {
+    try {
+      await adminConfigService.deleteAccountType(deleteDialog.id);
+      await loadData();
+      showToast('Account type deleted successfully', 'success');
+    } catch (error) {
+      console.error('Failed to delete account type:', error);
+      showToast('Failed to delete account type', 'error');
+    }
+  };
+
+  // Institution Handlers
+  const handleCreateInstitution = async (data: Omit<Institution, 'id' | 'created_by' | 'updated_by' | 'created_at' | 'updated_at'>) => {
+    try {
+      await adminConfigService.createInstitution(data);
+      await loadData();
+      showToast('Institution created successfully', 'success');
+    } catch (error) {
+      console.error('Failed to create institution:', error);
+      showToast('Failed to create institution', 'error');
+      throw error;
+    }
+  };
+
+  const handleEditInstitution = async (id: string, data: Partial<Institution>) => {
+    try {
+      await adminConfigService.updateInstitution(id, data);
+      await loadData();
+      showToast('Institution updated successfully', 'success');
+    } catch (error) {
+      console.error('Failed to update institution:', error);
+      showToast('Failed to update institution', 'error');
+      throw error;
+    }
+  };
+
+  const handleDeleteInstitution = async () => {
+    try {
+      await adminConfigService.deleteInstitution(deleteDialog.id);
+      await loadData();
+      showToast('Institution deleted successfully', 'success');
+    } catch (error) {
+      console.error('Failed to delete institution:', error);
+      showToast('Failed to delete institution', 'error');
+    }
+  };
+
+  const confirmDelete = () => {
+    if (deleteDialog.type === 'account_type') {
+      handleDeleteAccountType();
+    } else {
+      handleDeleteInstitution();
+    }
+    setDeleteDialog({ isOpen: false, type: 'account_type', id: '', name: '' });
   };
 
   if (loading) {
@@ -79,7 +189,18 @@ export const AccountConfigPage = () => {
               />
             </div>
           </div>
-          <button className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:scale-105 transition-all flex items-center gap-2 shadow-lg">
+          <button
+            onClick={() => {
+              if (activeTab === 'types') {
+                setEditingAccountType(null);
+                setShowAccountTypeModal(true);
+              } else {
+                setEditingInstitution(null);
+                setShowInstitutionModal(true);
+              }
+            }}
+            className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:scale-105 transition-all flex items-center gap-2 shadow-lg"
+          >
             <Plus className="w-4 h-4" />
             Add New
           </button>
@@ -92,10 +213,29 @@ export const AccountConfigPage = () => {
               className="glass rounded-xl p-4 hover:bg-white/5 transition-all relative"
             >
               <div className="absolute top-4 right-4 flex items-center gap-2">
-                <button className="p-2 glass-button text-white rounded-lg hover:scale-110 transition-all">
+                <button
+                  onClick={() => {
+                    if (activeTab === 'types') {
+                      setEditingAccountType(item as AccountType);
+                      setShowAccountTypeModal(true);
+                    } else {
+                      setEditingInstitution(item as Institution);
+                      setShowInstitutionModal(true);
+                    }
+                  }}
+                  className="p-2 glass-button text-white rounded-lg hover:scale-110 transition-all"
+                >
                   <Edit2 className="w-4 h-4" />
                 </button>
-                <button className="p-2 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all">
+                <button
+                  onClick={() => setDeleteDialog({
+                    isOpen: true,
+                    type: activeTab === 'types' ? 'account_type' : 'institution',
+                    id: item.id,
+                    name: item.display_name,
+                  })}
+                  className="p-2 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all"
+                >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -117,6 +257,45 @@ export const AccountConfigPage = () => {
           ))}
         </div>
       </div>
+
+      {/* Account Type Modal */}
+      <EditAccountTypeModal
+        isOpen={showAccountTypeModal || editingAccountType !== null}
+        accountType={editingAccountType}
+        onClose={() => {
+          setShowAccountTypeModal(false);
+          setEditingAccountType(null);
+        }}
+        onSave={handleEditAccountType}
+        onCreate={handleCreateAccountType}
+      />
+
+      {/* Institution Modal */}
+      <EditInstitutionModal
+        isOpen={showInstitutionModal || editingInstitution !== null}
+        institution={editingInstitution}
+        onClose={() => {
+          setShowInstitutionModal(false);
+          setEditingInstitution(null);
+        }}
+        onSave={handleEditInstitution}
+        onCreate={handleCreateInstitution}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        title={`Delete ${deleteDialog.type === 'account_type' ? 'Account Type' : 'Institution'}`}
+        message={`Are you sure you want to delete "${deleteDialog.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteDialog({ isOpen: false, type: 'account_type', id: '', name: '' })}
+      />
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onClose={(id) => setToasts(toasts.filter(t => t.id !== id))} />
     </div>
   );
 };
