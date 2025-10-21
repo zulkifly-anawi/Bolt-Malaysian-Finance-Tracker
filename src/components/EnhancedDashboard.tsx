@@ -34,7 +34,7 @@ interface EnhancedDashboardProps {
 
 export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {}) => {
   const { signOut, user } = useAuth();
-  const { isAdmin, refetch: refetchAdmin } = useAdminAuth();
+  useAdminAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [goals, setGoals] = useState<Goal[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -206,7 +206,23 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <NotificationsPanel />
               {onEnterAdmin && (
-                <button onClick={async () => { await refetchAdmin(); if (isAdmin) onEnterAdmin(); }} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 text-white text-opacity-90 hover:text-opacity-100 glass-button rounded-xl transition-all">
+                <button
+                  onClick={async () => {
+                    try {
+                      const { data: isAdminNow, error } = await supabase.rpc('is_admin');
+                      if (error) {
+                        console.error('is_admin RPC error:', error);
+                        return;
+                      }
+                      if (isAdminNow) {
+                        onEnterAdmin();
+                      }
+                    } catch (e) {
+                      console.error('Admin check failed:', e);
+                    }
+                  }}
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 text-white text-opacity-90 hover:text-opacity-100 glass-button rounded-xl transition-all"
+                >
                   <Shield className="w-4 h-4 flex-shrink-0" />
                   <span className="hidden md:inline text-sm">Admin</span>
                 </button>
