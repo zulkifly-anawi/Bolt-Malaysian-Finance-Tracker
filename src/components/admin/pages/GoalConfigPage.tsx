@@ -17,6 +17,8 @@ export const GoalConfigPage = () => {
   const [toasts, setToasts] = useState<ToastProps[]>([]);
   const [editingCategory, setEditingCategory] = useState<GoalCategory | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
     type: 'category' | 'template';
@@ -53,6 +55,18 @@ export const GoalConfigPage = () => {
     }, 3000);
   };
 
+  const handleCreateCategory = async (data: Omit<GoalCategory, 'id' | 'created_by' | 'updated_by' | 'created_at' | 'updated_at'>) => {
+    try {
+      await adminConfigService.createGoalCategory(data);
+      await loadData();
+      showToast('Category created successfully', 'success');
+    } catch (error) {
+      console.error('Failed to create category:', error);
+      showToast('Failed to create category', 'error');
+      throw error;
+    }
+  };
+
   const handleEditCategory = async (id: string, data: Partial<GoalCategory>) => {
     try {
       await adminConfigService.updateGoalCategory(id, data);
@@ -61,6 +75,18 @@ export const GoalConfigPage = () => {
     } catch (error) {
       console.error('Failed to update category:', error);
       showToast('Failed to update category', 'error');
+      throw error;
+    }
+  };
+
+  const handleCreateTemplate = async (data: any) => {
+    try {
+      await adminConfigService.createGoalTemplate(data);
+      await loadData();
+      showToast('Template created successfully', 'success');
+    } catch (error) {
+      console.error('Failed to create template:', error);
+      showToast('Failed to create template', 'error');
       throw error;
     }
   };
@@ -151,7 +177,18 @@ export const GoalConfigPage = () => {
           <h2 className="text-xl font-bold text-white">
             {activeTab === 'categories' ? 'Goal Categories' : 'Goal Templates'}
           </h2>
-          <button className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:scale-105 transition-all flex items-center gap-2 shadow-lg">
+          <button
+            onClick={() => {
+              if (activeTab === 'categories') {
+                setEditingCategory(null);
+                setShowCategoryModal(true);
+              } else {
+                setEditingTemplate(null);
+                setShowTemplateModal(true);
+              }
+            }}
+            className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-semibold hover:scale-105 transition-all flex items-center gap-2 shadow-lg"
+          >
             <Plus className="w-4 h-4" />
             Add New
           </button>
@@ -256,17 +293,25 @@ export const GoalConfigPage = () => {
       </div>
 
       <EditCategoryModal
-        isOpen={editingCategory !== null}
+        isOpen={editingCategory !== null || showCategoryModal}
         category={editingCategory}
-        onClose={() => setEditingCategory(null)}
+        onClose={() => {
+          setEditingCategory(null);
+          setShowCategoryModal(false);
+        }}
         onSave={handleEditCategory}
+        onCreate={handleCreateCategory}
       />
 
       <EditTemplateModal
-        isOpen={editingTemplate !== null}
+        isOpen={editingTemplate !== null || showTemplateModal}
         template={editingTemplate}
-        onClose={() => setEditingTemplate(null)}
+        onClose={() => {
+          setEditingTemplate(null);
+          setShowTemplateModal(false);
+        }}
         onSave={handleEditTemplate}
+        onCreate={handleCreateTemplate}
       />
 
       <ConfirmDialog
