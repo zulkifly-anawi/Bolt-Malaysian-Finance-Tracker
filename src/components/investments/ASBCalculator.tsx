@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, DollarSign, Calendar, Info } from 'lucide-react';
+import { TrendingUp, DollarSign, Calendar, Info, ChevronDown } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import { calculateASBProjection, DIVIDEND_RATES, ASB_RATES_DETAILED, calculateASBDividendByUnits } from '../../utils/investmentCalculators';
 
@@ -16,6 +16,12 @@ interface ASBCalculatorProps {
 
 export const ASBCalculator = ({ account }: ASBCalculatorProps) => {
   const [years, setYears] = useState(5);
+  const historyKey = `asb.historyExpanded:${account.id}`;
+  const [historyExpanded, setHistoryExpanded] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem(historyKey);
+    return saved === 'true';
+  });
   const [projection, setProjection] = useState<{
     projectedBalance: number;
     totalDividends: number;
@@ -32,6 +38,18 @@ export const ASBCalculator = ({ account }: ASBCalculatorProps) => {
     );
     setProjection(proj);
   }, [account, years]);
+
+  // Sync historyExpanded to localStorage and load when account changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(historyKey, String(historyExpanded));
+  }, [historyExpanded, historyKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem(historyKey);
+    if (saved !== null) setHistoryExpanded(saved === 'true');
+  }, [historyKey]);
 
   const currentYearRate = DIVIDEND_RATES.ASB[2024];
   const currentYearDetails = ASB_RATES_DETAILED[2024];
@@ -101,33 +119,51 @@ export const ASBCalculator = ({ account }: ASBCalculatorProps) => {
       </div>
 
       <div className="glass-strong rounded-2xl p-4 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="font-semibold text-white">Historical Distribution Rates</h4>
-          <span className="text-xs text-white text-opacity-60 px-2 py-1 glass rounded-lg">Official ASB Data</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white border-opacity-20">
-                <th className="text-left text-white text-opacity-70 pb-2 px-2">Year</th>
-                <th className="text-right text-white text-opacity-70 pb-2 px-2">Dividend</th>
-                <th className="text-right text-white text-opacity-70 pb-2 px-2">Bonus</th>
-                <th className="text-right text-white text-opacity-70 pb-2 px-2 font-semibold">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(ASB_RATES_DETAILED).reverse().map(([year, rates]) => (
-                <tr key={year} className="border-b border-white border-opacity-10">
-                  <td className="py-2 px-2 text-white font-medium">{year}</td>
-                  <td className="py-2 px-2 text-right text-white text-opacity-90">{formatSen(rates.dividend)}</td>
-                  <td className="py-2 px-2 text-right text-white text-opacity-90">{formatSen(rates.bonus)}</td>
-                  <td className="py-2 px-2 text-right text-emerald-400 font-bold">{rates.total}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="text-xs text-white text-opacity-60 mt-3 italic">* Rates shown are per unit distributions in sen</p>
+        <button
+          onClick={() => setHistoryExpanded(!historyExpanded)}
+          className="w-full flex items-center justify-between mb-3 hover:bg-white hover:bg-opacity-5 rounded-lg p-2 -m-2 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold text-white">Historical Distribution Rates</h4>
+            <span className="text-xs text-white text-opacity-60 px-2 py-1 glass rounded-lg">Official ASB Data</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {!historyExpanded && (
+              <span className="text-sm text-emerald-400 font-medium">2024: 5.75%</span>
+            )}
+            <ChevronDown 
+              className={`w-5 h-5 text-white transition-transform ${historyExpanded ? 'rotate-180' : ''}`}
+            />
+          </div>
+        </button>
+        
+        {historyExpanded && (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white border-opacity-20">
+                    <th className="text-left text-white text-opacity-70 pb-2 px-2">Year</th>
+                    <th className="text-right text-white text-opacity-70 pb-2 px-2">Dividend</th>
+                    <th className="text-right text-white text-opacity-70 pb-2 px-2">Bonus</th>
+                    <th className="text-right text-white text-opacity-70 pb-2 px-2 font-semibold">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(ASB_RATES_DETAILED).reverse().map(([year, rates]) => (
+                    <tr key={year} className="border-b border-white border-opacity-10">
+                      <td className="py-2 px-2 text-white font-medium">{year}</td>
+                      <td className="py-2 px-2 text-right text-white text-opacity-90">{formatSen(rates.dividend)}</td>
+                      <td className="py-2 px-2 text-right text-white text-opacity-90">{formatSen(rates.bonus)}</td>
+                      <td className="py-2 px-2 text-right text-emerald-400 font-bold">{rates.total}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-white text-opacity-60 mt-3 italic">* Rates shown are per unit distributions in sen</p>
+          </>
+        )}
       </div>
 
       {projection && (
@@ -183,7 +219,7 @@ export const ASBCalculator = ({ account }: ASBCalculatorProps) => {
             </div>
           </div>
 
-          {account.monthly_contribution > 0 && (
+          {(account.monthly_contribution || 0) > 0 && (
             <div className="glass rounded-xl p-3">
               <p className="text-xs text-white text-opacity-70">Total Contributions: {formatCurrency(projection.totalContributions)}</p>
             </div>
