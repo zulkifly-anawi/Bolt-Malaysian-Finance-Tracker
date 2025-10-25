@@ -1,7 +1,7 @@
 import { Toast, ToastProps } from './Toast';
 
 interface ToastContainerProps {
-  toasts: ToastProps[];
+  toasts: Array<Omit<ToastProps, 'onClose'>>;
   onClose: (id: string) => void;
 }
 

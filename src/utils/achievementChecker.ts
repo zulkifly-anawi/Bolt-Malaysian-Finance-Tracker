@@ -103,13 +103,20 @@ export const awardAchievement = async (
   userId: string,
   achievement: { type: string; name: string; description: string; icon: string }
 ) => {
-  const { error: achievementError } = await supabase.from('user_achievements').insert({
-    user_id: userId,
-    achievement_type: achievement.type,
-    achievement_name: achievement.name,
-    achievement_description: achievement.description,
-    icon: achievement.icon,
-  });
+  // Use upsert with ignoreDuplicates to prevent duplicate achievement errors
+  // This handles race conditions and multiple concurrent checks gracefully
+  const { error: achievementError } = await supabase
+    .from('user_achievements')
+    .upsert({
+      user_id: userId,
+      achievement_type: achievement.type,
+      achievement_name: achievement.name,
+      achievement_description: achievement.description,
+      icon: achievement.icon,
+    }, {
+      onConflict: 'user_id,achievement_type',
+      ignoreDuplicates: true, // Skip if already exists (no error thrown)
+    });
 
   if (achievementError) {
     console.error('Failed to insert achievement:', achievementError);

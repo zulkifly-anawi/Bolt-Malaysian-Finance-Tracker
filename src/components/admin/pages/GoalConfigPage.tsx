@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Target } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { adminConfigService } from '../../../services/adminConfigService';
 import { supabase } from '../../../lib/supabase';
 import type { GoalCategory } from '../../../services/configService';
@@ -8,13 +8,14 @@ import { EditCategoryModal } from '../modals/EditCategoryModal';
 import { EditTemplateModal } from '../modals/EditTemplateModal';
 import { ToastContainer } from '../../common/ToastContainer';
 import type { ToastProps } from '../../common/Toast';
+import { resolveLucideIcon } from '../../../utils/iconUtils';
 
 export const GoalConfigPage = () => {
   const [activeTab, setActiveTab] = useState<'categories' | 'templates'>('categories');
   const [categories, setCategories] = useState<GoalCategory[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toasts, setToasts] = useState<ToastProps[]>([]);
+  const [toasts, setToasts] = useState<Array<Omit<ToastProps, 'onClose'>>>([]);
   const [editingCategory, setEditingCategory] = useState<GoalCategory | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -47,7 +48,7 @@ export const GoalConfigPage = () => {
     }
   };
 
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+  const showToast = (message: string, type: ToastProps['type'] = 'info') => {
     const id = Date.now().toString();
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
@@ -196,50 +197,54 @@ export const GoalConfigPage = () => {
 
         {activeTab === 'categories' ? (
           <div className="space-y-3">
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                className="glass rounded-xl p-4 hover:bg-white/5 transition-all relative"
-              >
-                <div className="absolute top-4 right-4 flex items-center gap-2">
-                  <button
-                    onClick={() => setEditingCategory(category)}
-                    className="p-2 glass-button text-white rounded-lg hover:scale-110 transition-all"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteDialog({
-                      isOpen: true,
-                      type: 'category',
-                      id: category.id,
-                      name: category.display_name,
-                    })}
-                    className="p-2 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="flex items-center gap-4 pr-24">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
-                    <Target className="w-5 h-5 text-white" />
+            {categories.map((category) => {
+              const IconComponent = resolveLucideIcon(category.icon);
+
+              return (
+                <div
+                  key={category.id}
+                  className="glass rounded-xl p-4 hover:bg-white/5 transition-all relative"
+                >
+                  <div className="absolute top-4 right-4 flex items-center gap-2">
+                    <button
+                      onClick={() => setEditingCategory(category)}
+                      className="p-2 glass-button text-white rounded-lg hover:scale-110 transition-all"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteDialog({
+                        isOpen: true,
+                        type: 'category',
+                        id: category.id,
+                        name: category.display_name,
+                      })}
+                      className="p-2 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-white">{category.display_name}</h3>
-                      <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
-                        category.is_active ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400'
-                      }`}>
-                        {category.is_active ? 'Active' : 'Inactive'}
-                      </span>
+                  <div className="flex items-center gap-4 pr-24">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                      <IconComponent className="w-5 h-5 text-white" />
                     </div>
-                    {category.description && (
-                      <p className="text-sm text-white/60">{category.description}</p>
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-white">{category.display_name}</h3>
+                        <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
+                          category.is_active ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {category.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      {category.description && (
+                        <p className="text-sm text-white/60">{category.description}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -325,7 +330,7 @@ export const GoalConfigPage = () => {
         onCancel={() => setDeleteDialog({ isOpen: false, type: 'category', id: '', name: '' })}
       />
 
-      <ToastContainer toasts={toasts} onClose={(id) => setToasts(toasts.filter(t => t.id !== id))} />
+  <ToastContainer toasts={toasts} onClose={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
     </div>
   );
 };

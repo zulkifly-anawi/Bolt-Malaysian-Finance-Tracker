@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { CheckCircle, AlertCircle, X } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 
 export interface ToastProps {
   id: string;
   message: string;
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'info';
   duration?: number;
   onClose: (id: string) => void;
 }
@@ -18,18 +18,20 @@ export const Toast = ({ id, message, type, duration = 3000, onClose }: ToastProp
     return () => clearTimeout(timer);
   }, [id, duration, onClose]);
 
+  const variantStyles: Record<ToastProps['type'], { border: string; iconColor: string; Icon: typeof CheckCircle }> = {
+    success: { border: 'border-green-400 border-opacity-30', iconColor: 'text-green-300', Icon: CheckCircle },
+    error: { border: 'border-red-400 border-opacity-30', iconColor: 'text-red-300', Icon: AlertCircle },
+    info: { border: 'border-blue-400 border-opacity-30', iconColor: 'text-blue-300', Icon: Info },
+  };
+
+  const { border, iconColor, Icon } = variantStyles[type];
+
   return (
     <div
-      className={`glass-strong rounded-2xl p-4 shadow-lg flex items-center gap-3 min-w-[300px] max-w-md animate-slide-in ${
-        type === 'success' ? 'border-2 border-green-400 border-opacity-30' : 'border-2 border-red-400 border-opacity-30'
-      }`}
+      className={`glass-strong rounded-2xl p-4 shadow-lg flex items-center gap-3 min-w-[300px] max-w-md animate-slide-in border-2 ${border}`}
     >
-      <div className={`flex-shrink-0 ${type === 'success' ? 'text-green-300' : 'text-red-300'}`}>
-        {type === 'success' ? (
-          <CheckCircle className="w-6 h-6" />
-        ) : (
-          <AlertCircle className="w-6 h-6" />
-        )}
+      <div className={`flex-shrink-0 ${iconColor}`}>
+        <Icon className="w-6 h-6" />
       </div>
       <p className="flex-1 text-white text-sm font-medium">{message}</p>
       <button

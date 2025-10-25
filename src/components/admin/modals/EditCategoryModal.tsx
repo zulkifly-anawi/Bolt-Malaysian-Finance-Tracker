@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { GoalCategory } from '../../../services/configService';
+import { resolveLucideIcon } from '../../../utils/iconUtils';
 
 interface EditCategoryModalProps {
   isOpen: boolean;
@@ -44,6 +45,8 @@ export const EditCategoryModal = ({ isOpen, category, onClose, onSave, onCreate 
   }, [category, isOpen]);
 
   if (!isOpen) return null;
+
+  const IconPreview = resolveLucideIcon(formData.icon);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,13 +111,21 @@ export const EditCategoryModal = ({ isOpen, category, onClose, onSave, onCreate 
             <label className="block text-white text-sm font-semibold mb-2">
               Icon
             </label>
-            <input
-              type="text"
-              value={formData.icon}
-              onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-              className="w-full px-4 py-3 glass-card text-white placeholder-white/40 rounded-xl focus:ring-2 focus:ring-cyan-400/50 outline-none transition-all"
-              placeholder="e.g., shield"
-            />
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={formData.icon}
+                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                className="flex-1 px-4 py-3 glass-card text-white placeholder-white/40 rounded-xl focus:ring-2 focus:ring-cyan-400/50 outline-none transition-all"
+                placeholder="e.g., shield"
+              />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
+                <IconPreview className="w-5 h-5 text-white" />
+              </div>
+            </div>
+            <p className="text-xs text-white/60 mt-2">
+              Enter a Lucide icon name (e.g., <code>shield</code>, <code>piggy-bank</code>, <code>coins</code>). View options at lucide.dev/icons.
+            </p>
           </div>
 
           <div>

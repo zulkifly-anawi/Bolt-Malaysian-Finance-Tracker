@@ -1,8 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Edit2, MoreVertical, TrendingUp, Calendar, CheckCircle, Eye } from 'lucide-react';
+import { Edit2, MoreVertical, TrendingUp, Calendar, CheckCircle, Eye, Link as LinkIcon, Hand } from 'lucide-react';
 import { formatCurrency, formatDate, calculateProgress, isGoalOnTrack } from '../../utils/formatters';
 import { QuickEditGoal } from './QuickEditGoal';
+import { AccountGoalLinker } from './AccountGoalLinker';
 import type { Goal } from '../../types/database';
+import { ConfirmDialog } from '../ConfirmDialog';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface GoalCardProps {
   goal: Goal;
@@ -20,12 +24,15 @@ export const GoalCard = ({
   accountProgress,
   onUpdateProgress,
   onViewDetails,
-  onFullEdit,
-  onDelete,
   onMarkComplete,
   onSuccess,
 }: GoalCardProps) => {
+  const { user } = useAuth();
   const [showQuickEdit, setShowQuickEdit] = useState(false);
+  const [showLinker, setShowLinker] = useState(false);
+  const [showConfirmSwitch, setShowConfirmSwitch] = useState(false);
+  const [savingSwitch, setSavingSwitch] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState<'right' | 'left'>('right');
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -77,6 +84,52 @@ export const GoalCard = ({
 
   return (
     <div className="glass-card rounded-2xl p-6 glass-hover transition-all relative group overflow-visible">
+      {showConfirmSwitch && (
+        <ConfirmDialog
+          isOpen={showConfirmSwitch}
+          title="Switch to Manual Tracking?"
+          message="This will unlink all accounts from this goal. You can link them again later."
+          confirmLabel={savingSwitch ? 'Switching…' : 'Switch to Manual'}
+          cancelLabel="Cancel"
+          variant="warning"
+          onConfirm={async () => {
+            if (!user) return;
+            try {
+              setSavingSwitch(true);
+              // Remove all links
+              const { error: delErr } = await supabase
+                .from('account_goals')
+                .delete()
+                .eq('goal_id', goal.id);
+              if (delErr) throw delErr;
+              // Set manual mode
+              const { error: updErr } = await supabase
+                .from('goals')
+                .update({ is_manual_goal: true })
+                .eq('id', goal.id)
+                .eq('user_id', user.id);
+              if (updErr) throw updErr;
+              setFlash('Tracking mode switched to Manual.');
+              if (onSuccess) onSuccess();
+            } catch (e) {
+              console.error(e);
+            } finally {
+              setSavingSwitch(false);
+              setShowConfirmSwitch(false);
+              setTimeout(() => setFlash(null), 2500);
+            }
+          }}
+          onCancel={() => setShowConfirmSwitch(false)}
+        />
+      )}
+
+      {showLinker && (
+        <AccountGoalLinker
+          goal={goal}
+          onClose={() => setShowLinker(false)}
+          onSuccess={onSuccess}
+        />
+      )}
       <div className="absolute top-3 right-3 flex items-center gap-2">
         <div className={`w-2 h-2 rounded-full ${getPriorityColor(goal.priority)}`} title={`${goal.priority} priority`} />
 
@@ -100,6 +153,30 @@ export const GoalCard = ({
                 ref={menuRef}
                 className={`absolute ${menuPosition === 'right' ? 'right-0' : 'left-0'} mt-2 w-48 glass-strong rounded-xl shadow-lg z-20 overflow-hidden animate-fade-in`}
               >
+                {/* Manage/Link Accounts - single entry dependent on tracking mode */}
+                {goal.is_manual_goal ? (
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowLinker(true);
+                    }}
+                    className="w-full px-4 py-3 text-left text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center gap-3"
+                  >
+                    <LinkIcon className="w-4 h-4" />
+                    Link Accounts
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowLinker(true);
+                    }}
+                    className="w-full px-4 py-3 text-left text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center gap-3"
+                  >
+                    <LinkIcon className="w-4 h-4" />
+                    Manage Funding Sources
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setShowMenu(false);
@@ -130,6 +207,18 @@ export const GoalCard = ({
                   <Eye className="w-4 h-4" />
                   View Details
                 </button>
+                {!goal.is_manual_goal && (
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowConfirmSwitch(true);
+                    }}
+                    className="w-full px-4 py-3 text-left text-white hover:bg-white hover:bg-opacity-10 transition-all flex items-center gap-3"
+                  >
+                    <Hand className="w-4 h-4" />
+                    Switch to Manual
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setShowMenu(false);
@@ -146,15 +235,36 @@ export const GoalCard = ({
         </div>
       </div>
 
-      <div className="pr-16">
+      {flash && (
+        <div className="mb-3 p-3 glass rounded-xl border border-blue-500/30 text-sm text-blue-200">
+          {flash}
+        </div>
+      )}
+
+      <div className="mb-6 mt-8">
         <h3 className="font-semibold text-white mb-1 text-lg">{goal.name}</h3>
-        <div className="flex items-center gap-2 text-sm text-white text-opacity-80 mb-4">
+        <div className="flex items-center gap-2 text-sm text-white text-opacity-80 mb-4 flex-wrap">
           <Calendar className="w-4 h-4" />
           <span>{formatDate(goal.target_date)}</span>
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
             onTrack ? 'glass text-green-300' : 'glass text-orange-300'
           }`}>
             {onTrack ? 'On Track' : 'Behind'}
+          </span>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
+            goal.is_manual_goal ? 'glass text-purple-300' : 'glass text-blue-300'
+          }`}>
+            {goal.is_manual_goal ? (
+              <>
+                <Hand className="w-3 h-3" />
+                Manual
+              </>
+            ) : (
+              <>
+                <LinkIcon className="w-3 h-3" />
+                Account-Linked
+              </>
+            )}
           </span>
         </div>
       </div>

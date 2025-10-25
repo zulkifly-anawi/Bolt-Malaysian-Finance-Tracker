@@ -284,7 +284,7 @@ export const calculateGoalProjection = (
   const projectedDate = new Date(now.getTime() + projectedMonths * 30 * 24 * 60 * 60 * 1000);
 
   let status: 'ahead' | 'on-track' | 'behind';
-  const progress = (currentAmount / targetAmount) * 100;
+  const progress = targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
 
   let timeProgress: number;
   if (createdAt) {
