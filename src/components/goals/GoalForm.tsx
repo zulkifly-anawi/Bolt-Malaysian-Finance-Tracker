@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { X, Target, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Target, AlertCircle, Hand, Link as LinkIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDateInput } from '../../utils/formatters';
 import { validateGoalData } from '../../utils/validation';
 import type { Goal } from '../../types/database';
 import { useGoalCategories } from '../../hooks/useConfig';
+import { AccountSelector, type SelectedAccount } from './AccountSelector';
 
 interface GoalFormProps {
   onClose: () => void;
@@ -21,7 +22,7 @@ interface GoalFormProps {
 
 export const GoalForm = ({ onClose, onSuccess, initialData, editData }: GoalFormProps) => {
   const { user } = useAuth();
-  const { categories, loading: categoriesLoading } = useGoalCategories();
+  const { categories } = useGoalCategories();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,12 +37,84 @@ export const GoalForm = ({ onClose, onSuccess, initialData, editData }: GoalForm
     priority: (editData?.priority || 'medium') as 'high' | 'medium' | 'low',
   });
 
+  // Tracking mode state (manual vs account-linked)
+  const [trackingMode, setTrackingMode] = useState<'manual' | 'account-linked'>(
+    editData?.is_manual_goal === false ? 'account-linked' : 'manual'
+  );
+
+  // Selected accounts for account-linked mode
+  const [selectedAccounts, setSelectedAccounts] = useState<SelectedAccount[]>([]);
+
+    // Load existing account-goal links when editing
+    useEffect(() => {
+      const loadAccountLinks = async () => {
+        if (!editData?.id || trackingMode !== 'account-linked') return;
+
+        try {
+          const { data: links, error } = await supabase
+            .from('account_goals')
+            .select(`
+              account_id,
+              allocation_percentage,
+              accounts (
+                id,
+                name,
+                current_balance
+              )
+            `)
+            .eq('goal_id', editData.id);
+
+          if (error) throw error;
+
+          if (links && links.length > 0) {
+            const mappedAccounts: SelectedAccount[] = links
+                .filter((link): link is typeof link & { 
+                  accounts: { id: string; name: string; current_balance: number } 
+                } => 
+                  link.accounts !== null
+                )
+              .map(link => ({
+                accountId: link.account_id,
+                  accountName: (link.accounts as any).name,
+                  currentBalance: (link.accounts as any).current_balance,
+                allocationPercentage: link.allocation_percentage,
+                  estimatedContribution: ((link.accounts as any).current_balance * link.allocation_percentage) / 100,
+              }));
+
+            setSelectedAccounts(mappedAccounts);
+          }
+        } catch (err) {
+          console.error('Error loading account links:', err);
+          // Don't show error to user, just log it
+        }
+      };
+
+      loadAccountLinks();
+    }, [editData?.id, trackingMode]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
     setError('');
     setLoading(true);
+
+      // Validate account-linked mode has at least one account selected
+      if (trackingMode === 'account-linked' && selectedAccounts.length === 0) {
+        setError('Please select at least one account to link to this goal.');
+        setLoading(false);
+        return;
+      }
+
+      // Validate total allocation doesn't exceed 100%
+      if (trackingMode === 'account-linked') {
+        const totalAllocation = selectedAccounts.reduce((sum, acc) => sum + acc.allocationPercentage, 0);
+        if (totalAllocation > 100) {
+          setError('Total allocation percentage cannot exceed 100%.');
+          setLoading(false);
+          return;
+        }
+      }
 
     const validation = validateGoalData({
       name: formData.name,
@@ -57,6 +130,7 @@ export const GoalForm = ({ onClose, onSuccess, initialData, editData }: GoalForm
 
     try {
       if (isEditMode && editData) {
+          // Update goal with is_manual_goal flag
         const { error: updateError } = await supabase
           .from('goals')
           .update({
@@ -66,25 +140,71 @@ export const GoalForm = ({ onClose, onSuccess, initialData, editData }: GoalForm
             target_date: formData.targetDate,
             description: formData.description,
             priority: formData.priority,
+              is_manual_goal: trackingMode === 'manual',
             updated_at: new Date().toISOString(),
           })
           .eq('id', editData.id)
           .eq('user_id', user.id);
 
         if (updateError) throw updateError;
+
+          // Handle account-goal link changes
+          // First, delete existing links
+          const { error: deleteError } = await supabase
+            .from('account_goals')
+            .delete()
+            .eq('goal_id', editData.id);
+
+          if (deleteError) throw deleteError;
+
+          // If account-linked mode, create new account_goals entries
+          if (trackingMode === 'account-linked' && selectedAccounts.length > 0) {
+            const accountGoalsData = selectedAccounts.map(acc => ({
+              goal_id: editData.id,
+              account_id: acc.accountId,
+              allocation_percentage: acc.allocationPercentage,
+            }));
+
+            const { error: linkError } = await supabase
+              .from('account_goals')
+              .insert(accountGoalsData);
+
+            if (linkError) throw linkError;
+          }
       } else {
-        const { error: insertError } = await supabase.from('goals').insert({
-          user_id: user.id,
-          name: formData.name,
-          category: formData.category,
-          target_amount: formData.targetAmount,
-          target_date: formData.targetDate,
-          description: formData.description,
-          priority: formData.priority,
-          current_amount: 0,
-        });
+          // Insert goal with is_manual_goal flag
+          const { data: newGoal, error: insertError } = await supabase
+            .from('goals')
+            .insert({
+              user_id: user.id,
+              name: formData.name,
+              category: formData.category,
+              target_amount: formData.targetAmount,
+              target_date: formData.targetDate,
+              description: formData.description,
+              priority: formData.priority,
+              current_amount: 0,
+              is_manual_goal: trackingMode === 'manual',
+            })
+            .select()
+            .single();
 
         if (insertError) throw insertError;
+
+          // If account-linked mode, create account_goals entries
+          if (trackingMode === 'account-linked' && newGoal && selectedAccounts.length > 0) {
+            const accountGoalsData = selectedAccounts.map(acc => ({
+              goal_id: newGoal.id,
+              account_id: acc.accountId,
+              allocation_percentage: acc.allocationPercentage,
+            }));
+
+            const { error: linkError } = await supabase
+              .from('account_goals')
+              .insert(accountGoalsData);
+
+            if (linkError) throw linkError;
+          }
       }
 
       onSuccess();
@@ -125,6 +245,49 @@ export const GoalForm = ({ onClose, onSuccess, initialData, editData }: GoalForm
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Tracking Mode Toggle */}
+            <div className="glass-card rounded-2xl p-4">
+              <label className="block text-sm font-medium text-white text-opacity-95 mb-3">
+                Track Progress By
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setTrackingMode('manual')}
+                  className={`p-4 rounded-xl transition-all ${
+                    trackingMode === 'manual'
+                      ? 'bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg'
+                      : 'glass-card hover:bg-white hover:bg-opacity-5'
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <Hand className="w-6 h-6 text-white" />
+                    <span className="text-sm font-semibold text-white">Manual Entry</span>
+                    <span className="text-xs text-white text-opacity-70 text-center">
+                      Update progress manually
+                    </span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTrackingMode('account-linked')}
+                  className={`p-4 rounded-xl transition-all ${
+                    trackingMode === 'account-linked'
+                      ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg'
+                      : 'glass-card hover:bg-white hover:bg-opacity-5'
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <LinkIcon className="w-6 h-6 text-white" />
+                    <span className="text-sm font-semibold text-white">Linked Accounts</span>
+                    <span className="text-xs text-white text-opacity-70 text-center">
+                      Track from account balances
+                    </span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-white text-opacity-95 mb-2">
                 Goal Name *
@@ -209,6 +372,15 @@ export const GoalForm = ({ onClose, onSuccess, initialData, editData }: GoalForm
                 ))}
               </div>
             </div>
+
+            {/* Account Selector (only show for account-linked mode) */}
+            {trackingMode === 'account-linked' && (
+              <AccountSelector
+                selectedAccounts={selectedAccounts}
+                onSelectionChange={setSelectedAccounts}
+                disabled={loading}
+              />
+            )}
 
             <div>
               <label className="block text-sm font-medium text-white text-opacity-95 mb-2">

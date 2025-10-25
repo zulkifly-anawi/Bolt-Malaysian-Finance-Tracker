@@ -28,7 +28,9 @@ export const exportGoalsToCSV = (goals: any[]) => {
     'Target Amount': goal.target_amount,
     'Current Amount': goal.current_amount || 0,
     'Target Date': goal.target_date,
-    'Progress %': ((goal.current_amount || 0) / goal.target_amount * 100).toFixed(2),
+    'Progress %': goal.target_amount > 0 
+      ? ((goal.current_amount || 0) / goal.target_amount * 100).toFixed(2)
+      : '0.00',
     Status: goal.is_achieved ? 'Achieved' : 'In Progress',
   }));
 
@@ -76,7 +78,11 @@ export const generateFinancialReportHTML = (
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${goal.name}</td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${formatCurrency(goal.target_amount)}</td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${formatCurrency(goal.current_amount || 0)}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${((goal.current_amount || 0) / goal.target_amount * 100).toFixed(1)}%</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${
+        goal.target_amount > 0 
+          ? ((goal.current_amount || 0) / goal.target_amount * 100).toFixed(1)
+          : '0.0'
+      }%</td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${formatDate(goal.target_date)}</td>
     </tr>
   `
@@ -380,7 +386,9 @@ const calculateAllGoalProjections = (goals: any[]) => {
       const now = new Date();
       const target = new Date(goal.target_date);
       const monthsRemaining = Math.max(1, Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30)));
-      const progressPercentage = ((goal.current_amount || 0) / goal.target_amount) * 100;
+      const progressPercentage = goal.target_amount > 0 
+        ? ((goal.current_amount || 0) / goal.target_amount) * 100
+        : 0;
 
       return {
         goal_id: goal.id,

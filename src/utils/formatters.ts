@@ -35,6 +35,9 @@ export const calculateMonthsRemaining = (targetDate: string): number => {
 export const isGoalOnTrack = (current: number, target: number, targetDate: string): boolean => {
   const monthsRemaining = calculateMonthsRemaining(targetDate);
   if (monthsRemaining === 0) return current >= target;
+  
+  // Prevent division by zero - if target is 0, goal can't be on track
+  if (target === 0) return false;
 
   const progress = (current / target) * 100;
   const now = new Date();

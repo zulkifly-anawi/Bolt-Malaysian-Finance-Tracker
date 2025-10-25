@@ -1,9 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { Target, TrendingUp, AlertCircle, Calendar, DollarSign, MoreVertical, Edit2, CheckCircle, Trash2 } from 'lucide-react';
+import { Target, TrendingUp, AlertCircle, Calendar, DollarSign, MoreVertical, Edit2, CheckCircle, Trash2, Link as LinkIcon, Hand } from 'lucide-react';
 import { formatCurrency, formatDate, calculateMonthsRemaining } from '../../utils/formatters';
 import { calculateGoalProjection, recommendBestAccount } from '../../utils/investmentCalculators';
 import { QuickEditGoal } from './QuickEditGoal';
 import type { Goal, Account } from '../../types/database';
+import { AccountGoalLinker } from './AccountGoalLinker';
+import { ConfirmDialog } from '../ConfirmDialog';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 interface GoalProjectionProps {
   goal: Goal;
@@ -28,11 +32,16 @@ export const GoalProjection = ({
   onSuccess,
   showActions = false
 }: GoalProjectionProps) => {
+  const { user } = useAuth();
   const [showQuickEdit, setShowQuickEdit] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState<'right' | 'left'>('right');
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [showLinker, setShowLinker] = useState(false);
+  const [showConfirmSwitch, setShowConfirmSwitch] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
 
   useEffect(() => {
     if (showMenu && menuButtonRef.current && menuRef.current) {
@@ -85,6 +94,49 @@ export const GoalProjection = ({
 
   return (
     <div className="glass-card rounded-3xl p-6 liquid-shine glow relative">
+      {showLinker && (
+        <AccountGoalLinker
+          goal={goal}
+          onClose={() => setShowLinker(false)}
+          onSuccess={() => onSuccess && onSuccess()}
+        />
+      )}
+      {showConfirmSwitch && (
+        <ConfirmDialog
+          isOpen={showConfirmSwitch}
+          title="Switch to Manual Tracking?"
+          message="This will unlink all accounts from this goal. You can link them again later."
+          confirmLabel={switching ? 'Switching…' : 'Switch to Manual'}
+          cancelLabel="Cancel"
+          variant="warning"
+          onConfirm={async () => {
+            if (!user) return;
+            try {
+              setSwitching(true);
+              const { error: delErr } = await supabase
+                .from('account_goals')
+                .delete()
+                .eq('goal_id', goal.id);
+              if (delErr) throw delErr;
+              const { error: updErr } = await supabase
+                .from('goals')
+                .update({ is_manual_goal: true })
+                .eq('id', goal.id)
+                .eq('user_id', user.id);
+              if (updErr) throw updErr;
+              setFlash('Tracking mode switched to Manual.');
+              onSuccess && onSuccess();
+            } catch (e) {
+              console.error(e);
+            } finally {
+              setSwitching(false);
+              setShowConfirmSwitch(false);
+              setTimeout(() => setFlash(null), 2500);
+            }
+          }}
+          onCancel={() => setShowConfirmSwitch(false)}
+        />
+      )}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className={`${colors.badge} rounded-xl p-3 shadow-lg`}>
@@ -99,6 +151,38 @@ export const GoalProjection = ({
           <div className={`px-3 py-1 ${colors.badge} text-white text-sm font-semibold rounded-full shadow-lg`}>
             {projection.status === 'ahead' ? 'Ahead' : projection.status === 'on-track' ? 'On Track' : 'Behind'}
           </div>
+          {/* Mode Actions */}
+          {showActions && (
+            goal.is_manual_goal ? (
+              <button
+                onClick={() => setShowLinker(true)}
+                className="px-3 py-1 glass rounded-full text-white text-sm font-semibold hover:bg-white/10 flex items-center gap-2"
+                title="Link Accounts"
+              >
+                <LinkIcon className="w-4 h-4" />
+                Link Accounts
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowLinker(true)}
+                  className="px-3 py-1 glass rounded-full text-white text-sm font-semibold hover:bg-white/10 flex items-center gap-2"
+                  title="Manage Funding Sources"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  Manage Funding Sources
+                </button>
+                <button
+                  onClick={() => setShowConfirmSwitch(true)}
+                  className="px-3 py-1 glass rounded-full text-white text-sm font-semibold hover:bg-white/10 flex items-center gap-2"
+                  title="Switch to Manual"
+                >
+                  <Hand className="w-4 h-4" />
+                  Manual
+                </button>
+              </div>
+            )
+          )}
           {showActions && (
             <div className="relative">
               <button
@@ -168,6 +252,11 @@ export const GoalProjection = ({
         </div>
       </div>
 
+      {flash && (
+        <div className="mb-3 p-3 glass rounded-xl border border-blue-500/30 text-sm text-blue-200">
+          {flash}
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div className="glass rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
@@ -192,7 +281,12 @@ export const GoalProjection = ({
           <div className="w-full bg-white bg-opacity-20 rounded-full h-2 mt-2">
             <div
               className={`${colors.badge} h-2 rounded-full transition-all duration-500`}
-              style={{ width: `${Math.min((goal.current_amount / goal.target_amount) * 100, 100)}%` }}
+              style={{ 
+                width: `${goal.target_amount > 0 
+                  ? Math.min((goal.current_amount / goal.target_amount) * 100, 100) 
+                  : 0
+                }%` 
+              }}
             />
           </div>
         </div>

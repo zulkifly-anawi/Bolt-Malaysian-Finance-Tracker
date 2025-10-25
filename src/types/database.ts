@@ -57,6 +57,7 @@ export interface Goal {
   priority: string;
   photo_url: string | null;
   is_achieved: boolean;
+  is_manual_goal: boolean; // True for manually tracked goals, false for account-linked goals
   achieved_at: string | null;
   last_progress_update: string | null;
   created_at: string;
