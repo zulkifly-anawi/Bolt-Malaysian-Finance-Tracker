@@ -118,26 +118,38 @@ export const calculateASBDividendByUnits = (
 
 export const calculateASBProjection = (
   currentBalance: number,
-  unitsHeld: number,
+  _unitsHeld: number,
   monthlyContribution: number,
   years: number
 ): { projectedBalance: number; totalDividends: number; totalContributions: number; yearlyBreakdown: Array<{year: number; balance: number; dividend: number}> } => {
-  const currentYearRate = DIVIDEND_RATES.ASB[2024] / 100;
+  // Use ASNB method approximation: distributions are based on the minimum monthly balance.
+  // Assumption: monthly contributions are made on the 1st of each month (so they count fully for that month).
+  const annualRate = DIVIDEND_RATES.ASB[2024] / 100;
+
   let balance = currentBalance;
   let totalDividends = 0;
-  let totalContributions = monthlyContribution * 12 * years;
+  const totalContributions = monthlyContribution * 12 * years;
   const yearlyBreakdown: Array<{year: number; balance: number; dividend: number}> = [];
 
-  for (let year = 0; year < years; year++) {
-    const annualContribution = monthlyContribution * 12;
-    balance += annualContribution;
+  const baseYear = new Date().getFullYear();
 
-    const dividend = balance * currentYearRate;
+  for (let y = 0; y < years; y++) {
+    let monthlyEligibleSum = 0; // Sum of monthly minimum balances (monotonic increasing without withdrawals)
+
+    for (let m = 0; m < 12; m++) {
+      // Contribution at the beginning (1st) of the month
+      balance += monthlyContribution;
+      // With only contributions (no withdrawals), the minimum monthly balance equals the balance for the month
+      monthlyEligibleSum += balance;
+    }
+
+    // Annual distribution based on sum of monthly minima
+    const dividend = (annualRate / 12) * monthlyEligibleSum;
     totalDividends += dividend;
     balance += dividend;
 
     yearlyBreakdown.push({
-      year: new Date().getFullYear() + year + 1,
+      year: baseYear + y + 1,
       balance,
       dividend,
     });
