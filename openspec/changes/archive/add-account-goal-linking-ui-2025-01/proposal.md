@@ -1,10 +1,13 @@
 # Add Account-Goal Linking UI
 
-**Status:** PROPOSED  
+**Status:** ✅ COMPLETED  
 **Created:** 2025-01-24  
+**Completed:** 2025-10-25  
 **Type:** Feature Addition  
 **Priority:** High  
-**Estimated Effort:** 16-24 hours
+**Estimated Effort:** 16-24 hours  
+**Actual Effort:** ~18 hours  
+**Merged to main:** [commit deab7af](https://github.com/zulkifly-anawi/Bolt-Malaysian-Finance-Tracker/commit/deab7af)
 
 ## Problem Statement
 
