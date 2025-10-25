@@ -16,7 +16,12 @@ interface ASBCalculatorProps {
 
 export const ASBCalculator = ({ account }: ASBCalculatorProps) => {
   const [years, setYears] = useState(5);
-  const [historyExpanded, setHistoryExpanded] = useState(false);
+  const historyKey = `asb.historyExpanded:${account.id}`;
+  const [historyExpanded, setHistoryExpanded] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem(historyKey);
+    return saved === 'true';
+  });
   const [projection, setProjection] = useState<{
     projectedBalance: number;
     totalDividends: number;
@@ -33,6 +38,18 @@ export const ASBCalculator = ({ account }: ASBCalculatorProps) => {
     );
     setProjection(proj);
   }, [account, years]);
+
+  // Sync historyExpanded to localStorage and load when account changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(historyKey, String(historyExpanded));
+  }, [historyExpanded, historyKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem(historyKey);
+    if (saved !== null) setHistoryExpanded(saved === 'true');
+  }, [historyKey]);
 
   const currentYearRate = DIVIDEND_RATES.ASB[2024];
   const currentYearDetails = ASB_RATES_DETAILED[2024];

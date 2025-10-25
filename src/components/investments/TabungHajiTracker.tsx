@@ -17,7 +17,12 @@ interface TabungHajiTrackerProps {
 export const TabungHajiTracker = ({ account }: TabungHajiTrackerProps) => {
   const [numPeople, setNumPeople] = useState(1);
   const [projection, setProjection] = useState<any>(null);
-  const [historyExpanded, setHistoryExpanded] = useState(false);
+  const thHistoryKey = `th.historyExpanded:${account.id}`;
+  const [historyExpanded, setHistoryExpanded] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem(thHistoryKey);
+    return saved === 'true';
+  });
 
   const pilgrimageType = account.pilgrimage_goal_type || 'Hajj';
   const isUmrah = pilgrimageType === 'Umrah';
@@ -51,6 +56,18 @@ export const TabungHajiTracker = ({ account }: TabungHajiTrackerProps) => {
   const iconColor = isUmrah ? 'from-blue-500 to-sky-600' : 'from-teal-500 to-cyan-600';
   const accentColor = isUmrah ? 'text-blue-400' : 'text-teal-400';
   const borderColor = isUmrah ? 'border-blue-400' : 'border-teal-400';
+
+  // Persist historyExpanded per account
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(thHistoryKey, String(historyExpanded));
+  }, [historyExpanded, thHistoryKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem(thHistoryKey);
+    if (saved !== null) setHistoryExpanded(saved === 'true');
+  }, [thHistoryKey]);
 
   return (
     <div className="glass-card rounded-3xl p-6 liquid-shine glow">

@@ -28,7 +28,12 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
   const [contributionBreakdown, setContributionBreakdown] = useState<any>(null);
   const [savingsType, setSavingsType] = useState<EPFSavingsType>(account.epf_savings_type || 'Conventional');
   const [rateMethod, setRateMethod] = useState<EPFDividendRateMethod>(account.epf_dividend_rate_method || 'latest');
-  const [historyExpanded, setHistoryExpanded] = useState(false);
+  const epfHistoryKey = `epf.historyExpanded:${account.id}`;
+  const [historyExpanded, setHistoryExpanded] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem(epfHistoryKey);
+    return saved === 'true';
+  });
 
   useEffect(() => {
     loadUserProfile();
@@ -116,6 +121,18 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
 
   const status = (projection?.status || 'on-track') as 'ahead' | 'on-track' | 'behind';
   const colors = statusColors[status];
+
+  // Persist historyExpanded to localStorage and load per account
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(epfHistoryKey, String(historyExpanded));
+  }, [historyExpanded, epfHistoryKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem(epfHistoryKey);
+    if (saved !== null) setHistoryExpanded(saved === 'true');
+  }, [epfHistoryKey]);
 
   return (
     <div className="glass-card rounded-3xl p-6 liquid-shine glow">
