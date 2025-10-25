@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calculator, TrendingUp, AlertCircle, CheckCircle2, Calendar, Settings } from 'lucide-react';
+import { Calculator, TrendingUp, AlertCircle, CheckCircle2, Calendar, Settings, ChevronDown } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import { calculateEPFProjection, getEPFBenchmarkForAge, calculateDividendRateByMethod, EPF_CONVENTIONAL_RATES, EPF_SYARIAH_RATES } from '../../utils/investmentCalculators';
 import type { EPFSavingsType, EPFDividendRateMethod } from '../../types/database';
@@ -28,6 +28,7 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
   const [contributionBreakdown, setContributionBreakdown] = useState<any>(null);
   const [savingsType, setSavingsType] = useState<EPFSavingsType>(account.epf_savings_type || 'Conventional');
   const [rateMethod, setRateMethod] = useState<EPFDividendRateMethod>(account.epf_dividend_rate_method || 'latest');
+  const [historyExpanded, setHistoryExpanded] = useState(false);
 
   useEffect(() => {
     loadUserProfile();
@@ -266,42 +267,64 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
       )}
 
       <div className="glass-strong rounded-2xl p-5 mb-6">
-        <h4 className="font-semibold text-white mb-4">Historical Dividend Rates (2017-2024)</h4>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white border-opacity-20">
-                <th className="text-left text-sm font-medium text-white text-opacity-80 pb-3">Year</th>
-                <th className="text-center text-sm font-medium text-white text-opacity-80 pb-3">Conventional</th>
-                <th className="text-center text-sm font-medium text-white text-opacity-80 pb-3">Syariah</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.keys(EPF_CONVENTIONAL_RATES).sort((a, b) => Number(b) - Number(a)).map((year) => {
-                const conventionalRate = EPF_CONVENTIONAL_RATES[Number(year)];
-                const syariahRate = EPF_SYARIAH_RATES[Number(year)];
+        <button
+          onClick={() => setHistoryExpanded(!historyExpanded)}
+          className="w-full flex items-center justify-between mb-4 hover:bg-white hover:bg-opacity-5 rounded-lg p-2 -m-2 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold text-white">Historical Dividend Rates (2017-2024)</h4>
+          </div>
+          <div className="flex items-center gap-2">
+            {!historyExpanded && (
+              <span className="text-sm text-gray-200 font-medium">
+                2024: {EPF_CONVENTIONAL_RATES[2024].toFixed(2)}% (Conv), {EPF_SYARIAH_RATES[2024].toFixed(2)}% (Syariah)
+              </span>
+            )}
+            <ChevronDown
+              className={`w-5 h-5 text-white transition-transform ${historyExpanded ? 'rotate-180' : ''}`}
+            />
+          </div>
+        </button>
 
-                return (
-                  <tr key={year} className="border-b border-white border-opacity-10">
-                    <td className="py-3 text-white font-medium">{year}</td>
-                    <td className={`py-3 text-center font-semibold ${savingsType === 'Conventional' ? 'text-white' : 'text-white text-opacity-60'}`}>
-                      {conventionalRate.toFixed(2)}%
-                    </td>
-                    <td className={`py-3 text-center font-semibold ${savingsType === 'Syariah' ? 'text-white' : 'text-white text-opacity-60'}`}>
-                      {syariahRate.toFixed(2)}%
-                    </td>
+        {historyExpanded && (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white border-opacity-20">
+                    <th className="text-left text-sm font-medium text-white text-opacity-80 pb-3">Year</th>
+                    <th className="text-center text-sm font-medium text-white text-opacity-80 pb-3">Conventional</th>
+                    <th className="text-center text-sm font-medium text-white text-opacity-80 pb-3">Syariah</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-4 pt-4 border-t border-white border-opacity-20">
-          <p className="text-xs text-white text-opacity-60">
-            Historical rates shown for reference. Your selected <span className="font-semibold text-white">{savingsType}</span> rates are highlighted.
-            Actual future dividend rates may vary based on EPF investment performance.
-          </p>
-        </div>
+                </thead>
+                <tbody>
+                  {Object.keys(EPF_CONVENTIONAL_RATES).sort((a, b) => Number(b) - Number(a)).map((year) => {
+                    const conventionalRate = EPF_CONVENTIONAL_RATES[Number(year)];
+                    const syariahRate = EPF_SYARIAH_RATES[Number(year)];
+
+                    return (
+                      <tr key={year} className="border-b border-white border-opacity-10">
+                        <td className="py-3 text-white font-medium">{year}</td>
+                        <td className={`py-3 text-center font-semibold ${savingsType === 'Conventional' ? 'text-white' : 'text-white text-opacity-60'}`}>
+                          {conventionalRate.toFixed(2)}%
+                        </td>
+                        <td className={`py-3 text-center font-semibold ${savingsType === 'Syariah' ? 'text-white' : 'text-white text-opacity-60'}`}>
+                          {syariahRate.toFixed(2)}%
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 pt-4 border-t border-white border-opacity-20">
+              <p className="text-xs text-white text-opacity-60">
+                Historical rates shown for reference. Your selected <span className="font-semibold text-white">{savingsType}</span> rates are highlighted.
+                Actual future dividend rates may vary based on EPF investment performance.
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
       <div className={`glass-card rounded-3xl p-6 border-2 ${colors.border} mb-6 liquid-shine`}>

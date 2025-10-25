@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Compass, TrendingUp, Calendar, Users } from 'lucide-react';
+import { Compass, TrendingUp, Calendar, Users, ChevronDown } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import { calculateTabungHajiProjection, DIVIDEND_RATES, HAJJ_COST_2025, UMRAH_COST } from '../../utils/investmentCalculators';
 import { MobileDropdown } from '../common/MobileDropdown';
@@ -17,6 +17,7 @@ interface TabungHajiTrackerProps {
 export const TabungHajiTracker = ({ account }: TabungHajiTrackerProps) => {
   const [numPeople, setNumPeople] = useState(1);
   const [projection, setProjection] = useState<any>(null);
+  const [historyExpanded, setHistoryExpanded] = useState(false);
 
   const pilgrimageType = account.pilgrimage_goal_type || 'Hajj';
   const isUmrah = pilgrimageType === 'Umrah';
@@ -106,15 +107,28 @@ export const TabungHajiTracker = ({ account }: TabungHajiTrackerProps) => {
       </div>
 
       <div className="glass-strong rounded-2xl p-4 mb-4">
-        <h4 className="font-semibold text-white mb-3">Historical Dividend Rates</h4>
-        <div className="grid grid-cols-5 gap-2">
-          {Object.entries(DIVIDEND_RATES['Tabung Haji']).reverse().map(([year, rate]) => (
-            <div key={year} className="text-center">
-              <p className="text-xs text-white text-opacity-70 mb-1">{year}</p>
-              <p className={`text-sm font-bold ${accentColor}`}>{rate}%</p>
-            </div>
-          ))}
-        </div>
+        <button
+          onClick={() => setHistoryExpanded(!historyExpanded)}
+          className="w-full flex items-center justify-between mb-3 hover:bg-white hover:bg-opacity-5 rounded-lg p-2 -m-2 transition-colors"
+        >
+          <h4 className="font-semibold text-white">Historical Dividend Rates</h4>
+          <div className="flex items-center gap-2">
+            {!historyExpanded && (
+              <span className={`text-sm font-medium ${accentColor}`}>2024: {currentYearRate}%</span>
+            )}
+            <ChevronDown className={`w-5 h-5 text-white transition-transform ${historyExpanded ? 'rotate-180' : ''}`} />
+          </div>
+        </button>
+        {historyExpanded && (
+          <div className="grid grid-cols-5 gap-2">
+            {Object.entries(DIVIDEND_RATES['Tabung Haji']).reverse().map(([year, rate]) => (
+              <div key={year} className="text-center">
+                <p className="text-xs text-white text-opacity-70 mb-1">{year}</p>
+                <p className={`text-sm font-bold ${accentColor}`}>{rate}%</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {projection && (
