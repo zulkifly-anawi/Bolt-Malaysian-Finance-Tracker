@@ -36,16 +36,8 @@ export const UserManagementPage = () => {
     try {
       setLoading(true);
 
-      // Fetch all users from auth.users (admin can see this)
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
-      } else {
-        console.log('Auth users found:', authUsers?.users?.length || 0);
-      }
-
       // Fetch all users with their profiles
+      // Admin users can see all profiles due to the "Admins can view all profiles" RLS policy
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -57,58 +49,6 @@ export const UserManagementPage = () => {
       }
 
       console.log('Fetched profiles:', profiles?.length || 0, 'users');
-
-      // If we have auth users but no profiles, create profiles for missing users
-      if (authUsers?.users && profiles) {
-        const profileIds = new Set(profiles.map(p => p.id));
-        const missingUsers = authUsers.users.filter(u => !profileIds.has(u.id));
-        
-        if (missingUsers.length > 0) {
-          console.log('Found users without profiles:', missingUsers.length);
-          console.log('Missing users:', missingUsers.map(u => u.email));
-          
-          // Create profiles for missing users
-          for (const authUser of missingUsers) {
-            const { error: insertError } = await supabase
-              .from('profiles')
-              .insert({
-                id: authUser.id,
-                email: authUser.email!,
-                full_name: authUser.user_metadata?.full_name || null,
-                age: null,
-                monthly_salary: 0,
-                notifications_enabled: true,
-                email_reminders_enabled: true,
-                last_balance_update: null,
-                epf_employee_contribution_percentage: 11,
-                epf_employer_contribution_percentage: 12,
-                use_custom_epf_contribution: false,
-                include_employer_contribution: true,
-                is_admin: false,
-                onboarding_completed: false,
-                created_at: authUser.created_at,
-                updated_at: authUser.updated_at || authUser.created_at,
-              });
-            
-            if (insertError) {
-              console.error('Error creating profile for', authUser.email, ':', insertError);
-            } else {
-              console.log('Created profile for', authUser.email);
-            }
-          }
-          
-          // Reload profiles after creating missing ones
-          const { data: updatedProfiles } = await supabase
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: false });
-          
-          if (updatedProfiles) {
-            profiles.length = 0;
-            profiles.push(...updatedProfiles);
-          }
-        }
-      }
 
       // Get user statistics
       const now = new Date();
