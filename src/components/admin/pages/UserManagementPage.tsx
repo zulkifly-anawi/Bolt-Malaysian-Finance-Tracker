@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Mail, Calendar, Shield, Search, TrendingUp, Wallet, Target } from 'lucide-react';
+import { Users, Mail, Calendar, Shield, Search, TrendingUp, Wallet, Target, RefreshCw } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import type { Profile } from '../../../types/database';
 
@@ -42,7 +42,12 @@ export const UserManagementPage = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+
+      console.log('Fetched profiles:', profiles?.length || 0, 'users');
 
       // Get user statistics
       const now = new Date();
@@ -142,6 +147,22 @@ export const UserManagementPage = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header with Refresh Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white">User Management</h2>
+          <p className="text-sm text-white/60">View and manage registered users</p>
+        </div>
+        <button
+          onClick={loadUsers}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-xl hover:bg-cyan-500/30 transition-all disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="glass-strong rounded-2xl p-6 border border-cyan-500/20">
