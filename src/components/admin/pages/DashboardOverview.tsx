@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wallet, Target, TrendingUp, Trophy, FileText, ArrowRight, Activity } from 'lucide-react';
+import { Wallet, Target, TrendingUp, Trophy, FileText, ArrowRight, Activity, Users } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { auditService } from '../../../services/auditService';
 
@@ -14,6 +14,8 @@ export const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
     goalCategories: 0,
     goalTemplates: 0,
     achievements: 0,
+    totalUsers: 0,
+    activeUsers: 0,
   });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,14 +26,18 @@ export const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
 
   const loadDashboardData = async () => {
     try {
-      const [accountTypes, institutions, goalCategories, goalTemplates, achievements, activity] = await Promise.all([
+      const [accountTypes, institutions, goalCategories, goalTemplates, achievements, activity, profiles] = await Promise.all([
         supabase.from('admin_config_account_types').select('id', { count: 'exact', head: true }),
         supabase.from('admin_config_institutions').select('id', { count: 'exact', head: true }),
         supabase.from('admin_config_goal_categories').select('id', { count: 'exact', head: true }),
         supabase.from('goal_templates').select('id', { count: 'exact', head: true }),
         supabase.from('achievement_definitions').select('id', { count: 'exact', head: true }),
         auditService.getRecentActivity(10),
+        supabase.from('profiles').select('id, onboarding_completed', { count: 'exact' }),
       ]);
+
+      const totalUsers = profiles.count || 0;
+      const activeUsers = profiles.data?.filter(p => p.onboarding_completed).length || 0;
 
       setStats({
         accountTypes: accountTypes.count || 0,
@@ -39,6 +45,8 @@ export const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
         goalCategories: goalCategories.count || 0,
         goalTemplates: goalTemplates.count || 0,
         achievements: achievements.count || 0,
+        totalUsers,
+        activeUsers,
       });
 
       setRecentActivity(activity);
@@ -50,6 +58,14 @@ export const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
   };
 
   const configCards = [
+    {
+      id: 'users',
+      title: 'User Management',
+      description: 'View and manage registered users',
+      icon: Users,
+      stats: `${stats.totalUsers} users, ${stats.activeUsers} active`,
+      color: 'from-indigo-500 to-purple-600',
+    },
     {
       id: 'accounts',
       title: 'Account Configuration',
@@ -99,7 +115,7 @@ export const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
         <p className="text-white/70">Manage system configuration and view recent changes</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {configCards.map((card) => {
           const Icon = card.icon;
           return (

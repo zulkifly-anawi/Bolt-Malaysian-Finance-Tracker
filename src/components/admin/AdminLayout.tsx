@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   Home,
-  Shield
+  Shield,
+  Users
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -29,6 +30,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'users', label: 'User Management', icon: Users },
   { id: 'accounts', label: 'Account Config', icon: Wallet },
   { id: 'goals', label: 'Goal Config', icon: Target },
   { id: 'investments', label: 'Investment Rates', icon: TrendingUp },
