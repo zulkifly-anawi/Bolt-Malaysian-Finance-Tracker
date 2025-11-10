@@ -8,9 +8,10 @@ import { AchievementsPage } from './pages/AchievementsPage';
 import { SystemRulesPage } from './pages/SystemRulesPage';
 import { AuditLogPage } from './pages/AuditLogPage';
 import { AdminEmailsPage } from './pages/AdminEmailsPage';
+import { UserManagementPage } from './pages/UserManagementPage';
 import { useAdminAuth } from '../../hooks/useConfig';
 
-type AdminPage = 'dashboard' | 'accounts' | 'goals' | 'investments' | 'achievements' | 'system' | 'audit' | 'adminEmails';
+type AdminPage = 'dashboard' | 'accounts' | 'goals' | 'investments' | 'achievements' | 'system' | 'audit' | 'adminEmails' | 'users';
 
 interface AdminDashboardProps {
   onExitAdmin: () => void;
@@ -68,6 +69,8 @@ export const AdminDashboard = ({ onExitAdmin }: AdminDashboardProps) => {
         return <AuditLogPage />;
       case 'adminEmails':
         return <AdminEmailsPage />;
+      case 'users':
+        return <UserManagementPage />;
       case 'dashboard':
       default:
         return <DashboardOverview onNavigate={(page) => setCurrentPage(page as AdminPage)} />;
