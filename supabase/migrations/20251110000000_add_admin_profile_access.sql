@@ -6,26 +6,18 @@
 DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Admins can update any profile" ON public.profiles;
 
--- Create a function to check if current user is admin (avoids infinite recursion)
-CREATE OR REPLACE FUNCTION public.is_current_user_admin()
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-STABLE
-AS $$
-  SELECT COALESCE(
-    (SELECT is_admin FROM public.profiles WHERE id = auth.uid()),
-    false
-  );
-$$;
+-- Note: We use the existing is_admin() function which already exists and checks:
+-- 1. profiles.is_admin = true OR
+-- 2. email exists in admin_authorized_emails table
+-- This avoids infinite recursion and provides flexible admin management
 
--- Add policy for admins to view all profiles (using function to avoid recursion)
+-- Add policy for admins to view all profiles
 CREATE POLICY "Admins can view all profiles"
 ON public.profiles
 FOR SELECT
 TO authenticated
 USING (
-  is_current_user_admin() = true
+  is_admin() = true
 );
 
 -- Add policy for admins to update any profile (for admin management)
@@ -34,8 +26,8 @@ ON public.profiles
 FOR UPDATE
 TO authenticated
 USING (
-  is_current_user_admin() = true
+  is_admin() = true
 )
 WITH CHECK (
-  is_current_user_admin() = true
+  is_admin() = true
 );
