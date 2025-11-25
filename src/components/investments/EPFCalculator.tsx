@@ -86,7 +86,7 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
   const updateSavingsSettings = async (newSavingsType?: EPFSavingsType, newRateMethod?: EPFDividendRateMethod) => {
     if (!user) return;
 
-    const updates: any = {};
+    const updates: Partial<{ epf_savings_type: EPFSavingsType; epf_dividend_rate_method: EPFDividendRateMethod }> = {};
     if (newSavingsType) {
       setSavingsType(newSavingsType);
       updates.epf_savings_type = newSavingsType;

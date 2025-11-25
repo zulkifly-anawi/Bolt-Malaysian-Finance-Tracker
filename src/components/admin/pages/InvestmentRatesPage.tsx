@@ -52,9 +52,9 @@ export const InvestmentRatesPage = () => {
 
       if (error) throw error;
       setRates(data || []);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load rates:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Failed to load rates');
     } finally {
       setLoading(false);
     }
@@ -119,8 +119,8 @@ export const InvestmentRatesPage = () => {
 
       await loadRates();
       resetForm();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save dividend rate');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save dividend rate');
       console.error('Save error:', err);
     }
   };
@@ -156,8 +156,8 @@ export const InvestmentRatesPage = () => {
       });
 
       await loadRates();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete rate');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete rate');
       console.error('Delete error:', err);
     }
   };

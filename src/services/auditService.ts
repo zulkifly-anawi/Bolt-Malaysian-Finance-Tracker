@@ -7,8 +7,8 @@ export interface AuditLogEntry {
   action_type: 'CREATE' | 'UPDATE' | 'DELETE' | 'REORDER';
   table_name: string;
   record_id: string;
-  old_value: any;
-  new_value: any;
+  old_value: unknown;
+  new_value: unknown;
   ip_address: string | null;
   user_agent: string | null;
   timestamp: string;
@@ -27,8 +27,8 @@ export const auditService = {
     action_type: 'CREATE' | 'UPDATE' | 'DELETE' | 'REORDER';
     table_name: string;
     record_id: string;
-    old_value?: any;
-    new_value?: any;
+    old_value?: unknown;
+    new_value?: unknown;
   }) {
     try {
       const user = (await supabase.auth.getUser()).data.user;

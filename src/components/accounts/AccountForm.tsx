@@ -17,8 +17,8 @@ interface AccountFormProps {
 
 export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) => {
   const { user } = useAuth();
-  const { accountTypes, loading: accountTypesLoading } = useAccountTypes();
-  const { institutions, loading: institutionsLoading } = useInstitutions();
+  const { accountTypes } = useAccountTypes();
+  const { institutions } = useInstitutions();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 

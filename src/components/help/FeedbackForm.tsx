@@ -43,8 +43,8 @@ export const FeedbackForm = () => {
       setEmail('');
 
       setTimeout(() => setSubmitted(false), 5000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit feedback. Please try again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit feedback. Please try again.');
       console.error('Feedback submission error:', err);
     } finally {
       setIsSubmitting(false);

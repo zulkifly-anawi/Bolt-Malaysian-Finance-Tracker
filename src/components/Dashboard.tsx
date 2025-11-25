@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Target, Wallet, TrendingUp, Plus, Pencil, Trash2, CheckCircle, Circle, Calendar } from 'lucide-react';
+import { LogOut, Target, Wallet, TrendingUp, Plus, Calendar } from 'lucide-react';
 import { formatCurrency, formatDate, calculateProgress, isGoalOnTrack } from '../utils/formatters';
+import type { Account, Goal } from '../types/database';
+
+interface GoalWithAmount extends Goal {
+  current_amount: number;
+}
 
 export const Dashboard = () => {
   const { signOut, user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [goals, setGoals] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [goals, setGoals] = useState<GoalWithAmount[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

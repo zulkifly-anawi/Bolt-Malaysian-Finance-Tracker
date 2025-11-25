@@ -1,10 +1,27 @@
+// Memoization cache for formatCurrency
+const currencyCache = new Map<number, string>();
+
 export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('ms-MY', {
+  // Round to 2 decimal places for cache key
+  const roundedAmount = Math.round(amount * 100) / 100;
+  
+  const cached = currencyCache.get(roundedAmount);
+  if (cached) return cached;
+  
+  const formatted = new Intl.NumberFormat('ms-MY', {
     style: 'currency',
     currency: 'MYR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount).replace('MYR', 'RM');
+  
+  // Keep cache size reasonable
+  if (currencyCache.size > 1000) {
+    currencyCache.clear();
+  }
+  
+  currencyCache.set(roundedAmount, formatted);
+  return formatted;
 };
 
 export const formatDate = (date: string): string => {

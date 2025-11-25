@@ -257,13 +257,13 @@ export const AuditLogPage = () => {
                       <span>{log.admin_email}</span>
                     </div>
 
-                    {(log.old_value || log.new_value) && (
+                    {(log.old_value !== null || log.new_value !== null) && (
                       <details className="mt-3">
                         <summary className="cursor-pointer text-sm text-white/60 hover:text-white/80">
                           View Changes
                         </summary>
                         <div className="mt-2 space-y-2">
-                          {log.old_value && (
+                          {log.old_value !== null && (
                             <div className="glass-strong rounded-lg p-3">
                               <p className="text-xs text-red-300 font-semibold mb-1">Old Value:</p>
                               <pre className="text-xs text-white/70 overflow-x-auto">
@@ -271,7 +271,7 @@ export const AuditLogPage = () => {
                               </pre>
                             </div>
                           )}
-                          {log.new_value && (
+                          {log.new_value !== null && (
                             <div className="glass-strong rounded-lg p-3">
                               <p className="text-xs text-green-300 font-semibold mb-1">New Value:</p>
                               <pre className="text-xs text-white/70 overflow-x-auto">

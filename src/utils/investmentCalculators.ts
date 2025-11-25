@@ -118,7 +118,7 @@ export const calculateASBDividendByUnits = (
 
 export const calculateASBProjection = (
   currentBalance: number,
-  unitsHeld: number,
+  _unitsHeld: number,
   monthlyContribution: number,
   years: number
 ): { projectedBalance: number; totalDividends: number; totalContributions: number; yearlyBreakdown: Array<{year: number; balance: number; dividend: number}> } => {
