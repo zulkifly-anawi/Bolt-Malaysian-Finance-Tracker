@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import {
   LayoutDashboard,
   Wallet,
@@ -25,7 +26,7 @@ interface AdminLayoutProps {
 interface NavItem {
   id: string;
   label: string;
-  icon: any;
+  icon: LucideIcon;
 }
 
 const navItems: NavItem[] = [

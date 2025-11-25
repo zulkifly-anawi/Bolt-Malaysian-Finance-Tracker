@@ -66,8 +66,8 @@ export const QuickEditGoal = ({ goal, onCancel, onSuccess }: QuickEditGoalProps)
       if (updateError) throw updateError;
 
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update goal. Please try again.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update goal. Please try again.');
       console.error('Quick edit error:', err);
     } finally {
       setLoading(false);

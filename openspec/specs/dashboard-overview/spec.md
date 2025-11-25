@@ -229,6 +229,38 @@ The system SHALL load dashboard efficiently with minimal delay.
 - **AND** lazy loads secondary widgets (activity, achievements)
 - **AND** maintains responsive UI during loading
 
+#### Scenario: Performance optimization
+- **WHEN** rendering dashboard components
+- **THEN** system uses `useCallback` for data loading functions
+- **AND** memoizes expensive calculations with `useMemo`
+- **AND** includes proper dependency arrays in `useEffect`
+- **AND** prevents unnecessary re-renders
+
+### Requirement: Admin Access (v1.1.0+)
+The system SHALL provide admin panel access from dashboard for authorized users.
+
+#### Scenario: Admin button visibility
+- **WHEN** authenticated user is admin
+- **THEN** dashboard displays "Admin Panel" button
+- **AND** verifies admin status via `is_admin()` RPC
+- **AND** checks both `profiles.is_admin` and `admin_authorized_emails`
+
+#### Scenario: Admin panel navigation
+- **WHEN** admin clicks "Admin Panel" button
+- **THEN** system navigates to admin dashboard
+- **AND** displays admin-only features:
+  - User Management
+  - System Configuration
+  - Account/Goal Configuration
+  - Audit Logs
+- **AND** applies admin RLS policies
+
+#### Scenario: Non-admin user
+- **WHEN** non-admin user views dashboard
+- **THEN** system hides admin panel button
+- **AND** blocks direct navigation to admin routes
+- **AND** redirects to main dashboard if attempted
+
 ## Technical Details
 
 ### Component Structure
@@ -248,43 +280,63 @@ EnhancedDashboard contains:
 
 ### Data Fetching
 ```typescript
-// Dashboard data loading
-async function loadDashboardData(userId: string) {
-  const [accounts, goals, achievements, notifications] = await Promise.all([
-    fetchUserAccounts(userId),
-    fetchUserGoals(userId),
-    fetchRecentAchievements(userId),
-    fetchUnreadNotifications(userId)
-  ]);
+// Dashboard data loading with useCallback (v1.1.0+)
+const loadDashboardData = useCallback(async () => {
+  if (!user) return;
   
-  const netWorth = accounts.reduce((sum, acc) => sum + acc.current_balance, 0);
-  const activeGoals = goals.filter(g => !g.is_achieved);
-  const completedGoals = goals.filter(g => g.is_achieved);
-  
-  return {
-    netWorth,
-    accounts,
-    goals: activeGoals,
-    completedGoals,
-    achievements,
-    notifications,
-    stats: {
-      accountCount: accounts.length,
-      goalCount: goals.length,
-      completionRate: (completedGoals.length / goals.length) * 100
-    }
-  };
-}
+  setLoading(true);
+  try {
+    const [accounts, goals, achievements, notifications] = await Promise.all([
+      fetchUserAccounts(user.id),
+      fetchUserGoals(user.id),
+      fetchRecentAchievements(user.id),
+      fetchUnreadNotifications(user.id)
+    ]);
+    
+    const netWorth = accounts.reduce((sum, acc) => sum + acc.current_balance, 0);
+    const activeGoals = goals.filter(g => !g.is_achieved);
+    const completedGoals = goals.filter(g => g.is_achieved);
+    
+    setDashboardData({
+      netWorth,
+      accounts,
+      goals: activeGoals,
+      completedGoals,
+      achievements,
+      notifications,
+      stats: {
+        accountCount: accounts.length,
+        goalCount: goals.length,
+        completionRate: goals.length > 0 
+          ? (completedGoals.length / goals.length) * 100 
+          : 0
+      }
+    });
+  } catch (error) {
+    console.error('Dashboard load error:', error);
+    setError(error instanceof Error ? error.message : 'Failed to load dashboard');
+  } finally {
+    setLoading(false);
+  }
+}, [user]);
+
+// Use in effect with proper dependencies
+useEffect(() => {
+  loadDashboardData();
+}, [user, loadDashboardData]);
 ```
 
 ### Implementation Files
-- `src/components/EnhancedDashboard.tsx` - Main dashboard
+- `src/components/EnhancedDashboard.tsx` - Main dashboard (v1.1.0: optimized with useCallback)
 - `src/components/Dashboard.tsx` - Legacy/simple dashboard
 - `src/components/LandingPage.tsx` - Public landing page
 - `src/components/PrivacyPolicy.tsx` - Privacy page
 - `src/components/common/DashboardWidget.tsx` - Reusable widget container
 - `src/components/accounts/AccountsSummary.tsx` - Accounts widget
 - `src/components/goals/GoalsSummary.tsx` - Goals widget
+- `src/components/admin/AdminDashboard.tsx` - Admin panel (v1.1.0+)
+- `src/hooks/useConfig.ts` - Admin authentication hook (v1.1.0+)
+- `src/utils/adminAuth.ts` - Admin verification utilities (v1.1.0+)
 
 ### Responsive Breakpoints
 ```css

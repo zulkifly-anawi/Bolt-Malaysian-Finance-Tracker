@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { adminConfigService } from '../../../services/adminConfigService';
 import { supabase } from '../../../lib/supabase';
@@ -29,9 +29,9 @@ export const GoalConfigPage = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [cats, temps] = await Promise.all([
@@ -46,7 +46,7 @@ export const GoalConfigPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const showToast = (message: string, type: ToastProps['type'] = 'info') => {
     const id = Date.now().toString();

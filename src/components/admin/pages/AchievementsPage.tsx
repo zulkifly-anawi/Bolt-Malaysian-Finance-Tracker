@@ -9,7 +9,7 @@ interface Achievement {
   name: string;
   description: string;
   icon: string;
-  criteria: any;
+  criteria: Record<string, unknown>;
   points: number;
   is_active: boolean;
   created_at: string;
@@ -62,9 +62,9 @@ export const AchievementsPage = () => {
 
       if (error) throw error;
       setAchievements(data || []);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load achievements:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Failed to load achievements');
     } finally {
       setLoading(false);
     }
@@ -151,8 +151,8 @@ export const AchievementsPage = () => {
 
       await loadAchievements();
       resetForm();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save achievement');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save achievement');
       console.error('Save error:', err);
     }
   };
@@ -190,8 +190,8 @@ export const AchievementsPage = () => {
       });
 
       await loadAchievements();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete achievement');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete achievement');
       console.error('Delete error:', err);
     }
   };
@@ -214,8 +214,8 @@ export const AchievementsPage = () => {
       });
 
       await loadAchievements();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update achievement status');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update achievement status');
       console.error('Toggle error:', err);
     }
   };

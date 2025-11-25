@@ -136,6 +136,132 @@ If your contribution requires database changes:
 2. Name it with timestamp: `YYYYMMDDHHMMSS_description.sql`
 3. Include clear comments explaining the changes
 4. Update the README's database schema section
+5. Follow the [MIGRATION_GUIDELINES.md](MIGRATION_GUIDELINES.md) for best practices
+
+## Testing Guidelines
+
+We take code quality seriously. Before submitting your contribution, ensure all tests pass and your code meets our standards.
+
+### Pre-Submission Checklist
+
+Run these commands before submitting a PR:
+
+```bash
+# 1. Type checking - Ensure no TypeScript errors
+npm run typecheck
+
+# 2. Build test - Verify production build works
+npm run build
+
+# 3. Lint check - Ensure code style compliance
+npm run lint
+```
+
+All three commands must pass without errors.
+
+### Testing Your Changes
+
+#### Manual Testing
+
+1. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+2. **Test the following scenarios:**
+   - User registration and login flow
+   - Account creation (ASB, EPF, Tabung Haji, Savings)
+   - Goal creation and linking to accounts
+   - Data export functionality
+   - Mobile responsiveness (use browser dev tools)
+
+3. **For admin features:**
+   - Verify RLS policies work (users can't access others' data)
+   - Test admin panel functionality if applicable
+   - Check audit logging for admin actions
+
+#### Database Testing
+
+If you modified the database schema:
+
+1. **Test migrations locally:**
+   ```bash
+   # Apply your migration
+   supabase db reset
+   
+   # Or apply specific migration
+   supabase db execute --file supabase/migrations/YOUR_MIGRATION.sql
+   ```
+
+2. **Verify data integrity:**
+   - Check that existing data isn't corrupted
+   - Test that new columns/tables work as expected
+   - Verify RLS policies prevent unauthorized access
+
+3. **Test rollback (if applicable):**
+   - Ensure data can be safely migrated back if needed
+
+#### Component Testing
+
+When creating or modifying components:
+
+- ✅ Test with empty state (no data)
+- ✅ Test with maximum data (many accounts/goals)
+- ✅ Test error states (API failures, invalid inputs)
+- ✅ Test loading states
+- ✅ Test on different screen sizes (mobile, tablet, desktop)
+- ✅ Test keyboard navigation and accessibility
+
+### What to Test Based on Change Type
+
+| Change Type | What to Test |
+|-------------|--------------|
+| **New Feature** | End-to-end user flow, edge cases, error handling |
+| **Bug Fix** | Original bug is fixed, no regression in related features |
+| **UI Change** | Responsive on all devices, accessibility, color contrast |
+| **Performance** | Load times, re-render counts, bundle size impact |
+| **Database** | Migration succeeds, RLS works, data integrity maintained |
+
+### TypeScript Best Practices
+
+- **No `any` types** - Use proper types or `unknown`
+- **Define interfaces** - Create types in `src/types/database.ts`
+- **Type guards** - Use `instanceof` or type predicates for unknowns
+- **Error handling** - Use `catch (err: unknown)` with proper type checks
+
+Example:
+```typescript
+// ❌ Bad
+catch (err: any) {
+  setError(err.message);
+}
+
+// ✅ Good
+catch (err: unknown) {
+  setError(err instanceof Error ? err.message : 'An error occurred');
+}
+```
+
+### Common Issues to Check
+
+Before submitting, verify:
+
+- [ ] No console errors in browser
+- [ ] No TypeScript errors (`npm run typecheck`)
+- [ ] No ESLint warnings (`npm run lint`)
+- [ ] App builds successfully (`npm run build`)
+- [ ] No sensitive data in commits (API keys, passwords)
+- [ ] Environment variables documented in `.env.example`
+- [ ] Changes work in both light and dark themes (if UI changes)
+- [ ] All new functions have proper TypeScript types
+- [ ] useEffect dependencies are correct (no missing deps)
+
+### Performance Considerations
+
+- Use `useCallback` for functions passed as props
+- Use `useMemo` for expensive calculations
+- Avoid unnecessary re-renders
+- Keep bundle size in check (check `dist/` folder size)
 
 ### Testing
 

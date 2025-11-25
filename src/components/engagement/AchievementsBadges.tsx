@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { Trophy, Award, Medal, Target, Briefcase, Heart, Compass, Lock } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { checkAchievements } from '../../utils/achievementChecker';
 import { formatCurrency } from '../../utils/formatters';
+import type { Account, Goal } from '../../types/database';
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, LucideIcon> = {
   trophy: Trophy,
   award: Award,
   medal: Medal,
@@ -17,8 +18,8 @@ const iconMap: Record<string, any> = {
 
 interface AchievementsBadgesProps {
   netWorth: number;
-  accounts: any[];
-  goals: any[];
+  accounts: Account[];
+  goals: Goal[];
 }
 
 export const AchievementsBadges = ({ netWorth, accounts, goals }: AchievementsBadgesProps) => {

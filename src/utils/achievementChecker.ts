@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import type { Account, Goal } from '../types/database';
 
 interface AchievementCheck {
   type: string;
@@ -13,8 +14,8 @@ interface AchievementCheck {
 export const checkAchievements = async (
   userId: string,
   netWorth: number,
-  accounts: any[],
-  goals: any[]
+  accounts: Account[],
+  goals: Goal[]
 ): Promise<AchievementCheck[]> => {
   const { data: earnedAchievements } = await supabase
     .from('user_achievements')

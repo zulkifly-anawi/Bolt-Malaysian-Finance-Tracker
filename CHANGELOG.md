@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-11-26
+
+### Admin Panel & Code Quality Release
+
+#### Added
+
+**Admin Panel - User Management**
+- Comprehensive user management page for administrators
+- View all registered users with statistics (total accounts, goals, balance)
+- Search and filter users by email or name
+- Toggle admin privileges for users
+- User profile details modal with account/goal breakdown
+- Admin authorization via `admin_authorized_emails` table
+
+**GitHub Copilot Integration**
+- Added `.github/copilot-instructions.md` with comprehensive project guidelines
+- Created 6 specialized Copilot agents:
+  - `code-reviewer.agent.md` - Code quality and best practices
+  - `docs-agent.agent.md` - Documentation analysis and generation
+  - `feature-developer.agent.md` - Feature implementation
+  - `migration-expert.agent.md` - Database migration assistance
+  - `security-auditor.agent.md` - Security vulnerability detection
+  - `test-generator.agent.md` - Test case generation
+
+#### Changed
+
+**TypeScript Improvements**
+- Replaced 15+ `any` types in `exportData.ts` with proper types
+- Added `ExportUser`, `ExportAccount`, `InvestmentProjections` interfaces
+- Fixed all `catch (err: any)` patterns across 9 files (14 occurrences)
+- Changed to `catch (err: unknown)` with proper `instanceof Error` checks
+
+**Performance Optimizations**
+- Added `useCallback` to `loadData` functions in 6 components:
+  - `EnhancedDashboard.tsx`
+  - `Dashboard.tsx`
+  - `AccountConfigPage.tsx`
+  - `SystemRulesPage.tsx`
+  - `GoalConfigPage.tsx`
+  - `AccountGoalLinker.tsx`
+- Fixed `useEffect` dependency arrays to include memoized functions
+- Prevents unnecessary re-renders and function recreations
+
+#### Security
+
+**Vulnerability Fixes**
+- Updated Vite from 5.4.2 to 7.2.4 (fixes CVE-related vulnerabilities)
+- Ran `npm audit fix` to resolve dependency vulnerabilities
+- All dependencies now pass security audit
+
+**Admin Security**
+- Dual-source admin verification (profiles.is_admin OR admin_authorized_emails)
+- Row Level Security (RLS) policies for admin tables
+- Audit logging for admin actions
+
+#### Fixed
+
+- Fixed RLS infinite recursion issues in admin policies
+- Fixed admin access for authorized email users
+- Corrected `asb_units_held` to `units_held` property name in export functions
+
+---
+
 ## [1.0.0] - 2025-10-16
 
 ### MVP 1 Release

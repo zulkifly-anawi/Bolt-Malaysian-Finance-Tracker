@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Settings, Shield, AlertCircle, Edit2, Save, X } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { auditService } from '../../../services/auditService';
@@ -34,9 +34,9 @@ export const SystemRulesPage = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [settingsData, rulesData] = await Promise.all([
@@ -49,13 +49,13 @@ export const SystemRulesPage = () => {
 
       setSettings(settingsData.data || []);
       setRules(rulesData.data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load data:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleUpdateSetting = async (setting: SystemSetting, newValue: string) => {
     setError('');
@@ -77,8 +77,8 @@ export const SystemRulesPage = () => {
 
       await loadData();
       setEditingSetting(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update setting');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update setting');
       console.error('Update error:', err);
     }
   };
@@ -106,8 +106,8 @@ export const SystemRulesPage = () => {
 
       await loadData();
       setEditingRule(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update rule');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update rule');
       console.error('Update error:', err);
     }
   };
@@ -130,8 +130,8 @@ export const SystemRulesPage = () => {
       });
 
       await loadData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to toggle setting');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle setting');
     }
   };
 
@@ -153,8 +153,8 @@ export const SystemRulesPage = () => {
       });
 
       await loadData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to toggle rule');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle rule');
     }
   };
 

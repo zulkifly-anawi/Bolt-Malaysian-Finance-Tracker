@@ -209,8 +209,8 @@ export const GoalForm = ({ onClose, onSuccess, initialData, editData }: GoalForm
 
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} goal. Please try again.`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : `Failed to ${isEditMode ? 'update' : 'create'} goal. Please try again.`);
     } finally {
       setLoading(false);
     }

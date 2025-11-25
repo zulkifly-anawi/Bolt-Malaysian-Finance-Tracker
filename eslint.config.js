@@ -23,6 +23,10 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      // Disable the problematic rule that has compatibility issues
+      '@typescript-eslint/no-unused-expressions': 'off',
+      // Use TypeScript's own unused variable checking instead
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
   }
 );

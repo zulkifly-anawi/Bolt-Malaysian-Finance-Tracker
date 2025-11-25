@@ -1,6 +1,22 @@
 import { supabase } from '../lib/supabase';
 import { auditService } from './auditService';
-import type { AccountType, Institution, GoalCategory, SystemSetting } from './configService';
+import type { AccountType, Institution, GoalCategory } from './configService';
+
+// Interface for goal template data
+interface GoalTemplateData {
+  id?: string;
+  name: string;
+  description: string | null;
+  category: string;
+  default_amount: number;
+  icon: string | null;
+  is_active?: boolean;
+  sort_order?: number;
+  created_by?: string;
+  updated_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export const adminConfigService = {
   async createAccountType(data: Omit<AccountType, 'id' | 'created_by' | 'updated_by' | 'created_at' | 'updated_at'>) {
@@ -302,7 +318,7 @@ export const adminConfigService = {
     return data;
   },
 
-  async createGoalTemplate(data: any) {
+  async createGoalTemplate(data: Omit<GoalTemplateData, 'id' | 'created_by' | 'updated_by' | 'created_at' | 'updated_at'>) {
     const { data: result, error } = await supabase
       .from('goal_templates')
       .insert({
@@ -325,7 +341,7 @@ export const adminConfigService = {
     return result;
   },
 
-  async updateGoalTemplate(id: string, data: any) {
+  async updateGoalTemplate(id: string, data: Partial<GoalTemplateData>) {
     const { data: oldData } = await supabase
       .from('goal_templates')
       .select('*')

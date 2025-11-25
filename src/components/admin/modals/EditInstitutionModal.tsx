@@ -62,8 +62,8 @@ export const EditInstitutionModal = ({
         await onCreate(formData);
       }
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save institution');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save institution');
       console.error('Save error:', err);
     } finally {
       setLoading(false);

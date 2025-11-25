@@ -31,11 +31,11 @@ export const ExportData = ({ user, netWorth, goals, accounts, achievements }: Ex
       });
 
       setTimeout(() => setExportStatus(null), 5000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('JSON export error:', error);
       setExportStatus({
         type: 'error',
-        message: error.message || 'Failed to export data. Please try again.'
+        message: error instanceof Error ? error.message : 'Failed to export data. Please try again.'
       });
 
       setTimeout(() => setExportStatus(null), 5000);

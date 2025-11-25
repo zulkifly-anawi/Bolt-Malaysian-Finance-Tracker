@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { Edit2, MoreVertical, TrendingUp, Calendar, CheckCircle, Eye, Link as LinkIcon, Hand } from 'lucide-react';
 import { formatCurrency, formatDate, calculateProgress, isGoalOnTrack } from '../../utils/formatters';
 import { QuickEditGoal } from './QuickEditGoal';
@@ -19,7 +19,7 @@ interface GoalCardProps {
   onSuccess: () => void;
 }
 
-export const GoalCard = ({
+export const GoalCardComponent = ({
   goal,
   accountProgress,
   onUpdateProgress,
@@ -328,3 +328,6 @@ export const GoalCard = ({
     </div>
   );
 };
+
+// Memoize the component to prevent unnecessary re-renders
+export const GoalCard = memo(GoalCardComponent);

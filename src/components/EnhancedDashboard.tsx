@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { LogOut, Target, Wallet, TrendingUp, Plus, Lightbulb, Trophy, Download, Trash2, AlertCircle, HelpCircle, Shield, X, Edit2, BookOpen } from 'lucide-react';
@@ -62,7 +62,7 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
     loadData();
     checkOnboarding();
     checkAdminStatus();
-  }, [user]);
+  }, [user, loadData]);
 
   const checkAdminStatus = async () => {
     if (!user) {
@@ -129,8 +129,9 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
       }
 
       await loadData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete. Please try again.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete. Please try again.';
+      setError(errorMessage);
       console.error('Delete error:', err);
     }
   };
@@ -145,7 +146,7 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
   };
 
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setError(null);
@@ -184,7 +185,15 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
       if (achievementsError) throw achievementsError;
 
       if (goalsWithAmounts) {
-        const processedGoals = goalsWithAmounts.map((goal: any) => {
+        interface GoalWithAccountGoals extends Goal {
+          account_goals?: Array<{
+            account_id: string;
+            allocation_percentage: number | null;
+            accounts: { current_balance: number } | null;
+          }>;
+        }
+        
+        const processedGoals = (goalsWithAmounts as GoalWithAccountGoals[]).map((goal) => {
           let accountProgress = 0;
           if (goal.account_goals && Array.isArray(goal.account_goals)) {
             for (const link of goal.account_goals) {
@@ -194,7 +203,7 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
               }
             }
           }
-          const { account_goals, ...goalData } = goal;
+          const { account_goals: _accountGoals, ...goalData } = goal;
           const manualAmount = goalData.manual_amount || 0;
           return { ...goalData, current_amount: accountProgress + manualAmount, account_progress: accountProgress };
         });
@@ -203,13 +212,14 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
 
       if (accountsData) setAccounts(accountsData);
       if (achievementsData) setAchievements(achievementsData);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load data. Please refresh the page.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load data. Please refresh the page.';
+      setError(errorMessage);
       console.error('Load data error:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const totalNetWorth = accounts.reduce((sum, acc) => sum + acc.current_balance, 0);
   const asbAccounts = accounts.filter(acc => acc.account_type === 'ASB');
@@ -345,8 +355,8 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-visible">
-                      {goals.filter(g => !g.is_achieved).map((goal: any) => {
-                        const accountProgress = goal.account_progress || 0;
+                      {goals.filter(g => !g.is_achieved).map((goal) => {
+                        const accountProgress = (goal as Goal & { account_progress?: number }).account_progress || 0;
                         return (
                           <GoalCard
                             key={goal.id}

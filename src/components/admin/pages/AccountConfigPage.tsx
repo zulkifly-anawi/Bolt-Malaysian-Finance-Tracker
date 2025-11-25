@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { adminConfigService } from '../../../services/adminConfigService';
 import type { AccountType, Institution } from '../../../services/configService';
@@ -31,9 +31,9 @@ export const AccountConfigPage = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [types, insts] = await Promise.all([
@@ -48,14 +48,15 @@ export const AccountConfigPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = Date.now().toString();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
+    const removeToast = (toastId: string) => {
+      setToasts((prev) => prev.filter((t) => t.id !== toastId));
+    };
+    setToasts((prev) => [...prev, { id, message, type, onClose: removeToast }]);
+    setTimeout(() => removeToast(id), 3000);
   };
 
   // Account Type Handlers
@@ -249,7 +250,7 @@ export const AccountConfigPage = () => {
                   </span>
                 </div>
                 <p className="text-sm text-white/60">{item.name}</p>
-                {item.description && (
+                {'description' in item && item.description && (
                   <p className="text-xs text-white/50 mt-1">{item.description}</p>
                 )}
               </div>
