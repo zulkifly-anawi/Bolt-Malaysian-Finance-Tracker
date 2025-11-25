@@ -5,7 +5,7 @@ A comprehensive financial tracking platform built specifically for Malaysians to
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![React](https://img.shields.io/badge/React-18.3.1-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-blue)
-![Vite](https://img.shields.io/badge/Vite-5.4.2-purple)
+![Vite](https://img.shields.io/badge/Vite-7.2.4-purple)
 ![Supabase](https://img.shields.io/badge/Supabase-Latest-green)
 
 ## 🚀 Features
@@ -160,6 +160,20 @@ src/
 - **Service Layer**: Business logic separation
 - **Type Safety**: Full TypeScript coverage
 - **Security First**: RLS policies on all tables
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+- **[Quick Start Guide](docs/guides/QUICKSTART.md)** - Get started in 5 minutes
+- **[API Documentation](docs/API.md)** - Database functions and service APIs
+- **[Contributing Guide](docs/development/CONTRIBUTING.md)** - How to contribute
+- **[Deployment Guide](docs/deployment/DEPLOYMENT.md)** - Production deployment
+- **[Security Policy](docs/SECURITY.md)** - Security practices and reporting
+- **[Migration Guidelines](docs/development/MIGRATION_GUIDELINES.md)** - Database migrations
+- **[OpenSpec](openspec/)** - Feature specifications and architecture
+
+See the [Documentation Index](docs/README.md) for complete documentation structure.
 
 ## 📋 Prerequisites
 

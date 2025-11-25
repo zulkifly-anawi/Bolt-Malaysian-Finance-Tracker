@@ -6,7 +6,9 @@ We release patches for security vulnerabilities in the following versions:
 
 | Version | Supported          |
 | ------- | ------------------ |
+| 1.1.x   | :white_check_mark: |
 | 1.0.x   | :white_check_mark: |
+| < 1.0   | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -89,6 +91,29 @@ We will acknowledge your report within 48 hours and provide:
 - ✅ Secure authentication via Supabase
 - ✅ No third-party data sharing
 - ✅ Regular security updates
+- ✅ Admin authorization system with dual-source verification
+- ✅ Audit logging for administrative actions
+- ✅ TypeScript strict mode for type safety
+
+## Recent Security Fixes
+
+### Version 1.1.0 (November 2025)
+
+**Dependency Vulnerabilities**
+- Updated Vite from 5.4.2 to 7.2.4 to address CVE-related vulnerabilities
+- Ran `npm audit fix` to resolve all dependency security issues
+- All packages now pass security audit with zero vulnerabilities
+
+**Admin Security Enhancements**
+- Implemented dual-source admin verification (`profiles.is_admin` OR `admin_authorized_emails`)
+- Added Row Level Security policies for admin configuration tables
+- Created comprehensive audit logging system for admin actions
+- Fixed RLS infinite recursion issues in admin policies
+
+**Code Quality & Type Safety**
+- Eliminated 15+ `any` types in data export functions
+- Fixed 14 unsafe `catch (err: any)` patterns across codebase
+- Improved error handling with proper type guards
 
 ## Security Updates
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { adminConfigService } from '../../../services/adminConfigService';
 import type { AccountType, Institution } from '../../../services/configService';
@@ -31,9 +31,9 @@ export const AccountConfigPage = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [types, insts] = await Promise.all([
@@ -48,7 +48,7 @@ export const AccountConfigPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = Date.now().toString();

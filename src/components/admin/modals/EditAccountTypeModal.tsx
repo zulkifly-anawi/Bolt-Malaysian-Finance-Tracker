@@ -62,8 +62,8 @@ export const EditAccountTypeModal = ({
         await onCreate(formData);
       }
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save account type');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save account type');
       console.error('Save error:', err);
     } finally {
       setLoading(false);

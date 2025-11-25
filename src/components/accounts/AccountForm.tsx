@@ -229,8 +229,8 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
 
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} account. Please try again.`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : `Failed to ${isEditMode ? 'update' : 'create'} account. Please try again.`);
     } finally {
       setLoading(false);
     }

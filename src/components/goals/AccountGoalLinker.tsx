@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Link as LinkIcon, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -38,65 +38,65 @@ export const AccountGoalLinker = ({ goal, onClose, onSuccess }: AccountGoalLinke
   const [searchTerm, setSearchTerm] = useState('');
 
   // Load user accounts and existing links
-  useEffect(() => {
-    const loadData = async () => {
-      if (!user) return;
-      
-      setLoading(true);
-      setError('');
+  const loadData = useCallback(async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    setError('');
 
-      try {
-        // Fetch user accounts
-        const { data: accountsData, error: accountsError } = await supabase
-          .from('accounts')
-          .select('id, name, current_balance, account_type')
-          .eq('user_id', user.id)
-          .order('name');
+    try {
+      // Fetch user accounts
+      const { data: accountsData, error: accountsError } = await supabase
+        .from('accounts')
+        .select('id, name, current_balance, account_type')
+        .eq('user_id', user.id)
+        .order('name');
 
-        if (accountsError) throw accountsError;
-        setAccounts(accountsData || []);
+      if (accountsError) throw accountsError;
+      setAccounts(accountsData || []);
 
-        // Fetch existing account-goal links
-        const { data: links, error: linksError } = await supabase
-          .from('account_goals')
-          .select(`
-            account_id,
-            allocation_percentage,
-            accounts (
-              id,
-              name,
-              current_balance
-            )
-          `)
-          .eq('goal_id', goal.id);
+      // Fetch existing account-goal links
+      const { data: links, error: linksError } = await supabase
+        .from('account_goals')
+        .select(`
+          account_id,
+          allocation_percentage,
+          accounts (
+            id,
+            name,
+            current_balance
+          )
+        `)
+        .eq('goal_id', goal.id);
 
-        if (linksError) throw linksError;
+      if (linksError) throw linksError;
 
-        if (links && links.length > 0) {
-          const mapped: LinkedAccount[] = links
-            .filter(link => link.accounts !== null)
-            .map(link => {
-              const account = link.accounts as any;
-              return {
-                accountId: link.account_id,
-                accountName: account.name,
-                currentBalance: account.current_balance,
-                allocationPercentage: link.allocation_percentage,
-                estimatedContribution: (account.current_balance * link.allocation_percentage) / 100,
-              };
-            });
-          
-          setLinkedAccounts(mapped);
-        }
-      } catch (err: any) {
-        setError(err.message || 'Failed to load accounts');
-      } finally {
-        setLoading(false);
+      if (links && links.length > 0) {
+        const mapped: LinkedAccount[] = links
+          .filter(link => link.accounts !== null)
+          .map(link => {
+            const account = link.accounts as { id: string; name: string; current_balance: number };
+            return {
+              accountId: link.account_id,
+              accountName: account.name,
+              currentBalance: account.current_balance,
+              allocationPercentage: link.allocation_percentage,
+              estimatedContribution: (account.current_balance * link.allocation_percentage) / 100,
+            };
+          });
+        
+        setLinkedAccounts(mapped);
       }
-    };
-
-    loadData();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load accounts');
+    } finally {
+      setLoading(false);
+    }
   }, [user, goal.id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleToggleAccount = (accountId: string) => {
     const isLinked = linkedAccounts.some(acc => acc.accountId === accountId);
@@ -213,8 +213,8 @@ export const AccountGoalLinker = ({ goal, onClose, onSuccess }: AccountGoalLinke
         onSuccess();
         onClose();
       }, 1000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update funding sources');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update funding sources');
     } finally {
       setSaving(false);
     }

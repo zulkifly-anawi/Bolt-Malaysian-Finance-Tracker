@@ -1,8 +1,69 @@
 import { formatCurrency, formatDate } from './formatters';
 import { supabase } from '../lib/supabase';
 import { calculateGoalProjection, calculateASBProjection, calculateEPFProjection, calculateTabungHajiProjection, HAJJ_COST_2025 } from './investmentCalculators';
+import type { Account, Goal, Achievement, BalanceEntry } from '../types/database';
 
-export const exportToCSV = (data: any[], filename: string) => {
+interface ExportUser {
+  id: string;
+  email: string;
+}
+
+// Extended Account type for export functions that may have additional runtime properties
+interface ExportAccount extends Omit<Account, 'institution'> {
+  institution?: string | null;
+  epf_age?: number;
+  epf_monthly_salary?: number;
+}
+
+interface InvestmentProjections {
+  asb: ASBProjectionRecord[];
+  epf: EPFProjectionRecord[];
+  tabung_haji: TabungHajiProjectionRecord[];
+}
+
+interface ASBProjectionRecord {
+  account_id: string;
+  account_name: string;
+  current_balance: number;
+  units_held: number;
+  monthly_contribution: number;
+  five_year_projection: {
+    projected_balance: number;
+    total_dividends: number;
+    total_contributions: number;
+  };
+}
+
+interface EPFProjectionRecord {
+  account_id: string;
+  account_name: string;
+  current_balance: number;
+  current_age: number;
+  monthly_salary: number;
+  retirement_projection: {
+    projected_balance_at_55: number;
+    years_to_retirement: number;
+    retirement_benchmark: number;
+    status: string;
+    additional_needed: number;
+    monthly_contribution: number;
+  };
+}
+
+interface TabungHajiProjectionRecord {
+  account_id: string;
+  account_name: string;
+  current_balance: number;
+  monthly_contribution: number;
+  hajj_projection: {
+    years_to_hajj: number;
+    projected_balance: number;
+    hajj_cost_target: number;
+    shortfall: number;
+  };
+}
+
+export const exportToCSV = (data: Record<string, unknown>[], filename: string) => {
   if (data.length === 0) return;
 
   const headers = Object.keys(data[0]);
@@ -21,7 +82,7 @@ export const exportToCSV = (data: any[], filename: string) => {
   downloadFile(csvContent, filename, 'text/csv');
 };
 
-export const exportGoalsToCSV = (goals: any[]) => {
+export const exportGoalsToCSV = (goals: Goal[]) => {
   const data = goals.map(goal => ({
     Name: goal.name,
     Category: goal.category,
@@ -37,7 +98,7 @@ export const exportGoalsToCSV = (goals: any[]) => {
   exportToCSV(data, 'financial-goals.csv');
 };
 
-export const exportAccountsToCSV = (accounts: any[]) => {
+export const exportAccountsToCSV = (accounts: ExportAccount[]) => {
   const data = accounts.map(account => ({
     Name: account.name,
     Type: account.account_type,
@@ -50,7 +111,7 @@ export const exportAccountsToCSV = (accounts: any[]) => {
   exportToCSV(data, 'investment-accounts.csv');
 };
 
-export const exportBalanceHistoryToCSV = (entries: any[]) => {
+export const exportBalanceHistoryToCSV = (entries: (BalanceEntry & { account_name?: string })[]) => {
   const data = entries.map(entry => ({
     Date: entry.entry_date,
     Account: entry.account_name || '',
@@ -62,11 +123,11 @@ export const exportBalanceHistoryToCSV = (entries: any[]) => {
 };
 
 export const generateFinancialReportHTML = (
-  user: any,
+  user: ExportUser,
   netWorth: number,
-  goals: any[],
-  accounts: any[],
-  achievements: any[]
+  goals: Goal[],
+  accounts: ExportAccount[],
+  achievements: Achievement[]
 ): string => {
   const now = new Date();
   const reportDate = formatDate(now.toISOString());
@@ -269,11 +330,11 @@ export const generateFinancialReportHTML = (
 };
 
 export const downloadFinancialReport = (
-  user: any,
+  user: ExportUser,
   netWorth: number,
-  goals: any[],
-  accounts: any[],
-  achievements: any[]
+  goals: Goal[],
+  accounts: ExportAccount[],
+  achievements: Achievement[]
 ) => {
   const html = generateFinancialReportHTML(user, netWorth, goals, accounts, achievements);
   const blob = new Blob([html], { type: 'text/html' });
@@ -299,13 +360,13 @@ const downloadFile = (content: string, filename: string, mimeType: string) => {
   URL.revokeObjectURL(url);
 };
 
-export const exportAllData = (goals: any[], accounts: any[], balanceEntries: any[]) => {
+export const exportAllData = (goals: Goal[], accounts: ExportAccount[], balanceEntries: (BalanceEntry & { account_name?: string })[]) => {
   exportGoalsToCSV(goals);
   setTimeout(() => exportAccountsToCSV(accounts), 500);
   setTimeout(() => exportBalanceHistoryToCSV(balanceEntries), 1000);
 };
 
-export const exportToJSON = (data: any, filename: string) => {
+export const exportToJSON = (data: unknown, filename: string) => {
   try {
     const jsonContent = JSON.stringify(data, null, 2);
     downloadFile(jsonContent, filename, 'application/json');
@@ -371,7 +432,7 @@ const fetchAccountGoalAllocations = async (userId: string) => {
   }
 };
 
-const calculateAllGoalProjections = (goals: any[]) => {
+const calculateAllGoalProjections = (goals: Goal[]) => {
   return goals.map(goal => {
     try {
       const monthlyContribution = 500;
@@ -417,8 +478,8 @@ const calculateAllGoalProjections = (goals: any[]) => {
   });
 };
 
-const calculateInvestmentProjections = (accounts: any[]) => {
-  const projections: any = {
+const calculateInvestmentProjections = (accounts: ExportAccount[]): InvestmentProjections => {
+  const projections: InvestmentProjections = {
     asb: [],
     epf: [],
     tabung_haji: []
@@ -429,7 +490,7 @@ const calculateInvestmentProjections = (accounts: any[]) => {
       if (account.account_type === 'ASB') {
         const asbProjection = calculateASBProjection(
           account.current_balance,
-          account.asb_units_held || 0,
+          account.units_held || 0,
           account.monthly_contribution || 0,
           5
         );
@@ -437,7 +498,7 @@ const calculateInvestmentProjections = (accounts: any[]) => {
           account_id: account.id,
           account_name: account.name,
           current_balance: account.current_balance,
-          units_held: account.asb_units_held || 0,
+          units_held: account.units_held || 0,
           monthly_contribution: account.monthly_contribution || 0,
           five_year_projection: {
             projected_balance: asbProjection.projectedBalance,
@@ -498,11 +559,11 @@ const calculateInvestmentProjections = (accounts: any[]) => {
 };
 
 export const exportComprehensiveDashboardJSON = async (
-  user: any,
+  user: ExportUser,
   netWorth: number,
-  goals: any[],
-  accounts: any[],
-  achievements: any[]
+  goals: Goal[],
+  accounts: ExportAccount[],
+  achievements: Achievement[]
 ) => {
   try {
     if (!user) throw new Error('User information is required');
@@ -520,12 +581,12 @@ export const exportComprehensiveDashboardJSON = async (
     const goalProjections = calculateAllGoalProjections(goals);
     const investmentProjections = calculateInvestmentProjections(accounts);
 
-    const groupedBalanceHistory: Record<string, any[]> = {};
+    const groupedBalanceHistory: Record<string, BalanceEntry[]> = {};
     accountIds.forEach(id => {
       groupedBalanceHistory[id] = balanceHistory.filter(entry => entry.account_id === id);
     });
 
-    const groupedProgressHistory: Record<string, any[]> = {};
+    const groupedProgressHistory: Record<string, BalanceEntry[]> = {};
     goalIds.forEach(id => {
       groupedProgressHistory[id] = goalProgressHistory.filter(entry => entry.goal_id === id);
     });
@@ -599,8 +660,8 @@ export const exportComprehensiveDashboardJSON = async (
       recordCount: balanceHistory.length + goals.length + accounts.length + achievements.length,
       filename
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error exporting comprehensive dashboard JSON:', error);
-    throw new Error(error.message || 'Failed to export dashboard data');
+    throw new Error(error instanceof Error ? error.message : 'Failed to export dashboard data');
   }
 };

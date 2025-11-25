@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { LogOut, Target, Wallet, TrendingUp, Plus, Calendar } from 'lucide-react';
@@ -18,9 +18,9 @@ export const Dashboard = () => {
 
   useEffect(() => {
     loadData();
-  }, [user]);
+  }, [user, loadData]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
@@ -55,7 +55,7 @@ export const Dashboard = () => {
 
     if (accountsData.data) setAccounts(accountsData.data);
     setLoading(false);
-  };
+  }, [user]);
 
   const totalNetWorth = accounts.reduce((sum, acc) => sum + acc.current_balance, 0);
 
