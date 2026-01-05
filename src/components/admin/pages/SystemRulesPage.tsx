@@ -32,10 +32,6 @@ export const SystemRulesPage = () => {
   const [editingSetting, setEditingSetting] = useState<SystemSetting | null>(null);
   const [editingRule, setEditingRule] = useState<ValidationRule | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
@@ -56,6 +52,10 @@ export const SystemRulesPage = () => {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleUpdateSetting = async (setting: SystemSetting, newValue: string) => {
     setError('');

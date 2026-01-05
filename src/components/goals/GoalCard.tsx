@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Edit2, MoreVertical, TrendingUp, Calendar, CheckCircle, Eye, Link as LinkIcon, Hand } from 'lucide-react';
 import { formatCurrency, formatDate, calculateProgress, isGoalOnTrack } from '../../utils/formatters';
 import { QuickEditGoal } from './QuickEditGoal';
@@ -329,5 +329,7 @@ export const GoalCardComponent = ({
   );
 };
 
-// Memoize the component to prevent unnecessary re-renders
-export const GoalCard = memo(GoalCardComponent);
+// Note: memo() was removed because the component receives multiple function props
+// that are created inline in the parent component. To make memoization effective,
+// all callback props would need to be wrapped with useCallback in the parent.
+export { GoalCardComponent as GoalCard };
