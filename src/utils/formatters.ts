@@ -4,6 +4,9 @@ class LRUCache<K, V> {
   private maxSize: number;
 
   constructor(maxSize: number) {
+    if (maxSize <= 0) {
+      throw new Error('LRUCache maxSize must be greater than 0');
+    }
     this.maxSize = maxSize;
   }
 
