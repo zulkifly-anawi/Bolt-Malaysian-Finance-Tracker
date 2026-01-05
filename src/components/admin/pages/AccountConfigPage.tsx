@@ -29,10 +29,6 @@ export const AccountConfigPage = () => {
     name: string;
   }>({ isOpen: false, type: 'account_type', id: '', name: '' });
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -49,6 +45,10 @@ export const AccountConfigPage = () => {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = Date.now().toString();
