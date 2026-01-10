@@ -1,5 +1,46 @@
-// Memoization cache for formatCurrency
-const currencyCache = new Map<number, string>();
+// LRU cache for formatCurrency with proper eviction
+class LRUCache<K, V> {
+  private cache = new Map<K, V>();
+  private maxSize: number;
+
+  constructor(maxSize: number) {
+    if (maxSize <= 0) {
+      throw new Error('LRUCache maxSize must be greater than 0');
+    }
+    this.maxSize = maxSize;
+  }
+
+  get(key: K): V | undefined {
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      // Move to end (most recently used)
+      this.cache.delete(key);
+      this.cache.set(key, value);
+    }
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    // Remove if exists to re-add at end
+    this.cache.delete(key);
+    
+    // Evict least recently used if at capacity
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
+    }
+    
+    this.cache.set(key, value);
+  }
+
+  get size(): number {
+    return this.cache.size;
+  }
+}
+
+const currencyCache = new LRUCache<number, string>(1000);
 
 export const formatCurrency = (amount: number): string => {
   // Round to 2 decimal places for cache key
@@ -14,11 +55,6 @@ export const formatCurrency = (amount: number): string => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount).replace('MYR', 'RM');
-  
-  // Keep cache size reasonable
-  if (currencyCache.size > 1000) {
-    currencyCache.clear();
-  }
   
   currencyCache.set(roundedAmount, formatted);
   return formatted;

@@ -16,10 +16,6 @@ export const Dashboard = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, [user, loadData]);
-
   const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -56,6 +52,10 @@ export const Dashboard = () => {
     if (accountsData.data) setAccounts(accountsData.data);
     setLoading(false);
   }, [user]);
+
+  useEffect(() => {
+    loadData();
+  }, [user, loadData]);
 
   const totalNetWorth = accounts.reduce((sum, acc) => sum + acc.current_balance, 0);
 

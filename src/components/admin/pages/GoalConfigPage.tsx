@@ -27,10 +27,6 @@ export const GoalConfigPage = () => {
     name: string;
   }>({ isOpen: false, type: 'category', id: '', name: '' });
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -47,6 +43,10 @@ export const GoalConfigPage = () => {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const showToast = (message: string, type: ToastProps['type'] = 'info') => {
     const id = Date.now().toString();

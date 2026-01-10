@@ -58,6 +58,81 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
   const [selectedGoalForHistory, setSelectedGoalForHistory] = useState<Goal | null>(null);
   const [toasts, setToasts] = useState<ToastProps[]>([]);
 
+  const loadData = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: goalsWithAmounts, error: goalsError } = await supabase
+        .from('goals')
+        .select(`
+          *,
+          account_goals (
+            account_id,
+            allocation_percentage,
+            accounts (
+              current_balance
+            )
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('target_date');
+
+      if (goalsError) throw goalsError;
+
+      const { data: accountsData, error: accountsError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (accountsError) throw accountsError;
+
+      const { data: achievementsData, error: achievementsError } = await supabase
+        .from('user_achievements')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('earned_at', { ascending: false });
+
+      if (achievementsError) throw achievementsError;
+
+      if (goalsWithAmounts) {
+        interface GoalWithAccountGoals extends Goal {
+          account_goals?: Array<{
+            account_id: string;
+            allocation_percentage: number | null;
+            accounts: { current_balance: number } | null;
+          }>;
+        }
+        
+        const processedGoals = (goalsWithAmounts as GoalWithAccountGoals[]).map((goal) => {
+          let accountProgress = 0;
+          if (goal.account_goals && Array.isArray(goal.account_goals)) {
+            for (const link of goal.account_goals) {
+              if (link.accounts) {
+                const percentage = link.allocation_percentage || 100;
+                accountProgress += (link.accounts.current_balance * percentage) / 100;
+              }
+            }
+          }
+          const { account_goals: _accountGoals, ...goalData } = goal;
+          const manualAmount = goalData.manual_amount || 0;
+          return { ...goalData, current_amount: accountProgress + manualAmount, account_progress: accountProgress };
+        });
+        setGoals(processedGoals);
+      }
+
+      if (accountsData) setAccounts(accountsData);
+      if (achievementsData) setAchievements(achievementsData);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load data. Please refresh the page.';
+      setError(errorMessage);
+      console.error('Load data error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     loadData();
     checkOnboarding();
@@ -144,82 +219,6 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
   const removeToast = (id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
-
-
-  const loadData = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data: goalsWithAmounts, error: goalsError } = await supabase
-        .from('goals')
-        .select(`
-          *,
-          account_goals (
-            account_id,
-            allocation_percentage,
-            accounts (
-              current_balance
-            )
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('target_date');
-
-      if (goalsError) throw goalsError;
-
-      const { data: accountsData, error: accountsError } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (accountsError) throw accountsError;
-
-      const { data: achievementsData, error: achievementsError } = await supabase
-        .from('user_achievements')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('earned_at', { ascending: false });
-
-      if (achievementsError) throw achievementsError;
-
-      if (goalsWithAmounts) {
-        interface GoalWithAccountGoals extends Goal {
-          account_goals?: Array<{
-            account_id: string;
-            allocation_percentage: number | null;
-            accounts: { current_balance: number } | null;
-          }>;
-        }
-        
-        const processedGoals = (goalsWithAmounts as GoalWithAccountGoals[]).map((goal) => {
-          let accountProgress = 0;
-          if (goal.account_goals && Array.isArray(goal.account_goals)) {
-            for (const link of goal.account_goals) {
-              if (link.accounts) {
-                const percentage = link.allocation_percentage || 100;
-                accountProgress += (link.accounts.current_balance * percentage) / 100;
-              }
-            }
-          }
-          const { account_goals: _accountGoals, ...goalData } = goal;
-          const manualAmount = goalData.manual_amount || 0;
-          return { ...goalData, current_amount: accountProgress + manualAmount, account_progress: accountProgress };
-        });
-        setGoals(processedGoals);
-      }
-
-      if (accountsData) setAccounts(accountsData);
-      if (achievementsData) setAchievements(achievementsData);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load data. Please refresh the page.';
-      setError(errorMessage);
-      console.error('Load data error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
 
   const totalNetWorth = accounts.reduce((sum, acc) => sum + acc.current_balance, 0);
   const asbAccounts = accounts.filter(acc => acc.account_type === 'ASB');
