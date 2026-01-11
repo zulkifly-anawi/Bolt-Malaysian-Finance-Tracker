@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Download, FileText, FileSpreadsheet } from 'lucide-react';
+import type { User } from '@supabase/supabase-js';
+import type { Goal, Account, Achievement } from '../../types/database';
 import { exportGoalsToCSV, exportAccountsToCSV, downloadFinancialReport, exportComprehensiveDashboardJSON } from '../../utils/exportData';
 
 interface ExportDataProps {
-  user: any;
+  user: User | null;
   netWorth: number;
-  goals: any[];
-  accounts: any[];
-  achievements: any[];
+  goals: Goal[];
+  accounts: Account[];
+  achievements: Achievement[];
 }
 
 // Feature Flag: Set to true to enable JSON export functionality in the UI
@@ -19,11 +21,13 @@ export const ExportData = ({ user, netWorth, goals, accounts, achievements }: Ex
   const [exportStatus, setExportStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   const handleJSONExport = async () => {
+    if (!user || !user.email) return;
     setIsExporting(true);
     setExportStatus(null);
 
     try {
-      const result = await exportComprehensiveDashboardJSON(user, netWorth, goals, accounts, achievements);
+      const exportUser = { ...user, email: user.email };
+      const result = await exportComprehensiveDashboardJSON(exportUser, netWorth, goals, accounts, achievements);
 
       setExportStatus({
         type: 'success',
@@ -96,7 +100,13 @@ export const ExportData = ({ user, netWorth, goals, accounts, achievements }: Ex
         </button>
 
         <button
-          onClick={() => downloadFinancialReport(user, netWorth, goals, accounts, achievements)}
+          onClick={() => {
+            if (user && user.email) {
+              const exportUser = { ...user, email: user.email };
+              downloadFinancialReport(exportUser, netWorth, goals, accounts, achievements);
+            }
+          }}
+          disabled={!user || !user.email}
           className="glass-card rounded-3xl p-6 border-2 border-purple-400 border-opacity-20 hover:border-opacity-50 hover:glow transition-all text-left group liquid-shine"
         >
           <div className="flex items-start gap-4">

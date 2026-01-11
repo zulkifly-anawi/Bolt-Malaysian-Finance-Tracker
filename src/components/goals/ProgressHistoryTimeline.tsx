@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Clock, Plus, Minus, Equal, TrendingUp, Download } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../utils/formatters';
@@ -23,11 +23,7 @@ export const ProgressHistoryTimeline = ({ goalId, goalName }: ProgressHistoryTim
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'add' | 'subtract' | 'set'>('all');
 
-  useEffect(() => {
-    loadHistory();
-  }, [goalId]);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -43,7 +39,11 @@ export const ProgressHistoryTimeline = ({ goalId, goalName }: ProgressHistoryTim
     } finally {
       setLoading(false);
     }
-  };
+  }, [goalId]);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
   const filteredEntries = filter === 'all'
     ? entries

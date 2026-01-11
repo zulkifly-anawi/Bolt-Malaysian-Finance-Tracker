@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calculator, TrendingUp, AlertCircle, CheckCircle2, Calendar, Settings, ChevronDown } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 import { calculateEPFProjection, getEPFBenchmarkForAge, calculateDividendRateByMethod, EPF_CONVENTIONAL_RATES, EPF_SYARIAH_RATES } from '../../utils/investmentCalculators';
@@ -6,7 +6,9 @@ import type { EPFSavingsType, EPFDividendRateMethod } from '../../types/database
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { getEPFContributionSettings, calculateEPFContribution, getContributionExplanation } from '../../utils/epfContributionHelpers';
-import type { EPFContributionSettings } from '../../utils/epfContributionHelpers';
+import type { EPFContributionSettings, EPFContributionBreakdown } from '../../utils/epfContributionHelpers';
+
+type EPFProjection = ReturnType<typeof calculateEPFProjection>;
 
 interface EPFCalculatorProps {
   account: {
@@ -23,9 +25,9 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
   const { user } = useAuth();
   const [userAge, setUserAge] = useState<number>(30);
   const [monthlySalary, setMonthlySalary] = useState<number>(5000);
-  const [projection, setProjection] = useState<any>(null);
+  const [projection, setProjection] = useState<EPFProjection | null>(null);
   const [contributionSettings, setContributionSettings] = useState<EPFContributionSettings | null>(null);
-  const [contributionBreakdown, setContributionBreakdown] = useState<any>(null);
+  const [contributionBreakdown, setContributionBreakdown] = useState<EPFContributionBreakdown | null>(null);
   const [savingsType, setSavingsType] = useState<EPFSavingsType>(account.epf_savings_type || 'Conventional');
   const [rateMethod, setRateMethod] = useState<EPFDividendRateMethod>(account.epf_dividend_rate_method || 'latest');
   const epfHistoryKey = `epf.historyExpanded:${account.id}`;
@@ -35,10 +37,30 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
     return saved === 'true';
   });
 
+  const loadUserProfile = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('age, monthly_salary')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (data) {
+      if (data.age) setUserAge(data.age);
+      if (data.monthly_salary) setMonthlySalary(data.monthly_salary);
+    }
+  }, [user]);
+
+  const loadContributionSettings = useCallback(async () => {
+    if (!user) return;
+    const settings = await getEPFContributionSettings(user.id, account.id);
+    setContributionSettings(settings);
+  }, [account.id, user]);
+
   useEffect(() => {
     loadUserProfile();
     loadContributionSettings();
-  }, [user, account.id]);
+  }, [loadContributionSettings, loadUserProfile]);
 
   useEffect(() => {
     if (userAge && monthlySalary && contributionSettings) {
@@ -60,25 +82,6 @@ export const EPFCalculator = ({ account }: EPFCalculatorProps) => {
     }
   }, [account, userAge, monthlySalary, contributionSettings, savingsType, rateMethod]);
 
-  const loadUserProfile = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('profiles')
-      .select('age, monthly_salary')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (data) {
-      if (data.age) setUserAge(data.age);
-      if (data.monthly_salary) setMonthlySalary(data.monthly_salary);
-    }
-  };
-
-  const loadContributionSettings = async () => {
-    if (!user) return;
-    const settings = await getEPFContributionSettings(user.id, account.id);
-    setContributionSettings(settings);
-  };
 
   const currentYearRate = calculateDividendRateByMethod(savingsType, rateMethod);
   const estimatedAnnualDividend = account.current_balance * (currentYearRate / 100);

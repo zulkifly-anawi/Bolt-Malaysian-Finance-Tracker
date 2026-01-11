@@ -10,14 +10,29 @@ import { ToastContainer } from '../../common/ToastContainer';
 import type { ToastProps } from '../../common/Toast';
 import { resolveLucideIcon } from '../../../utils/iconUtils';
 
+interface GoalTemplateData {
+  id?: string;
+  name: string;
+  description: string | null;
+  category: string;
+  default_amount: number;
+  icon: string | null;
+  is_active?: boolean;
+  sort_order?: number;
+  created_by?: string;
+  updated_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export const GoalConfigPage = () => {
   const [activeTab, setActiveTab] = useState<'categories' | 'templates'>('categories');
   const [categories, setCategories] = useState<GoalCategory[]>([]);
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<GoalTemplateData[]>([]);
   const [loading, setLoading] = useState(true);
   const [toasts, setToasts] = useState<Array<Omit<ToastProps, 'onClose'>>>([]);
   const [editingCategory, setEditingCategory] = useState<GoalCategory | null>(null);
-  const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<GoalTemplateData | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -80,7 +95,7 @@ export const GoalConfigPage = () => {
     }
   };
 
-  const handleCreateTemplate = async (data: any) => {
+  const handleCreateTemplate = async (data: Omit<GoalTemplateData, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'updated_by'>) => {
     try {
       await adminConfigService.createGoalTemplate(data);
       await loadData();
@@ -92,7 +107,7 @@ export const GoalConfigPage = () => {
     }
   };
 
-  const handleEditTemplate = async (id: string, data: any) => {
+  const handleEditTemplate = async (id: string, data: Partial<GoalTemplateData>) => {
     try {
       await adminConfigService.updateGoalTemplate(id, data);
       await loadData();
@@ -255,18 +270,35 @@ export const GoalConfigPage = () => {
               >
                 <div className="absolute top-4 right-4 flex gap-1">
                   <button
-                    onClick={() => setEditingTemplate(template)}
+                    onClick={() => {
+                      if (template.id) {
+                        setEditingTemplate({
+                          id: template.id,
+                          name: template.name,
+                          category: template.category,
+                          description: template.description || null,
+                          default_amount: template.default_amount,
+                          icon: template.icon || null,
+                          is_active: template.is_active || false,
+                          sort_order: template.sort_order || 0,
+                        });
+                      }
+                    }}
                     className="p-1.5 glass-button text-white rounded-lg hover:scale-110 transition-all"
                   >
                     <Edit2 className="w-3 h-3" />
                   </button>
                   <button
-                    onClick={() => setDeleteDialog({
-                      isOpen: true,
-                      type: 'template',
-                      id: template.id,
-                      name: template.name,
-                    })}
+                    onClick={() => {
+                      if (template.id) {
+                        setDeleteDialog({
+                          isOpen: true,
+                          type: 'template',
+                          id: template.id,
+                          name: template.name,
+                        });
+                      }
+                    }}
                     className="p-1.5 glass text-red-400 hover:bg-red-500/10 rounded-lg hover:scale-110 transition-all"
                   >
                     <Trash2 className="w-3 h-3" />
@@ -310,13 +342,20 @@ export const GoalConfigPage = () => {
 
       <EditTemplateModal
         isOpen={editingTemplate !== null || showTemplateModal}
-        template={editingTemplate}
+        template={editingTemplate && editingTemplate.id ? {
+          id: editingTemplate.id,
+          name: editingTemplate.name,
+          category: editingTemplate.category,
+          default_amount: editingTemplate.default_amount,
+          is_active: editingTemplate.is_active || false,
+          sort_order: editingTemplate.sort_order || 0,
+        } : null}
         onClose={() => {
           setEditingTemplate(null);
           setShowTemplateModal(false);
         }}
         onSave={handleEditTemplate}
-        onCreate={handleCreateTemplate}
+        onCreate={(data) => handleCreateTemplate({ ...data, description: data.description || null, icon: null })}
       />
 
       <ConfirmDialog

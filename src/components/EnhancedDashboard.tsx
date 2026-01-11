@@ -29,6 +29,15 @@ import type { Goal, Account, Achievement } from '../types/database';
 import { useAdminAuth } from '../hooks/useConfig';
 import { checkAchievements } from '../utils/achievementChecker';
 
+type DashboardGoal = Goal & { account_progress?: number };
+type GoalFormInitialData = {
+  name: string;
+  category: string;
+  targetAmount: number;
+  description?: string;
+  priority?: Goal['priority'];
+};
+
 interface EnhancedDashboardProps {
   onEnterAdmin?: () => void;
 }
@@ -37,25 +46,25 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
   const { signOut, user } = useAuth();
   useAdminAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goals, setGoals] = useState<DashboardGoal[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<DashboardGoal | null>(null);
   const [showGoalTemplates, setShowGoalTemplates] = useState(false);
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [showAccountForm, setShowAccountForm] = useState(false);
-  const [goalFormInitialData, setGoalFormInitialData] = useState<Partial<Goal> | null>(null);
-  const [editGoal, setEditGoal] = useState<Goal | null>(null);
+  const [goalFormInitialData, setGoalFormInitialData] = useState<GoalFormInitialData | null>(null);
+  const [editGoal, setEditGoal] = useState<DashboardGoal | null>(null);
   const [editAccount, setEditAccount] = useState<Account | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'account' | 'goal', id: string, name: string } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showProgressUpdate, setShowProgressUpdate] = useState(false);
-  const [selectedGoalForProgress, setSelectedGoalForProgress] = useState<Goal | null>(null);
+  const [selectedGoalForProgress, setSelectedGoalForProgress] = useState<DashboardGoal | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [selectedGoalForHistory, setSelectedGoalForHistory] = useState<Goal | null>(null);
+  const [selectedGoalForHistory, setSelectedGoalForHistory] = useState<DashboardGoal | null>(null);
   const [toasts, setToasts] = useState<ToastProps[]>([]);
 
   const loadData = useCallback(async () => {
@@ -107,17 +116,17 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
         
         const processedGoals = (goalsWithAmounts as GoalWithAccountGoals[]).map((goal) => {
           let accountProgress = 0;
-          if (goal.account_goals && Array.isArray(goal.account_goals)) {
-            for (const link of goal.account_goals) {
+          const { account_goals, ...goalData } = goal;
+          if (account_goals && Array.isArray(account_goals)) {
+            for (const link of account_goals) {
               if (link.accounts) {
                 const percentage = link.allocation_percentage || 100;
                 accountProgress += (link.accounts.current_balance * percentage) / 100;
               }
             }
           }
-          const { account_goals: _accountGoals, ...goalData } = goal;
           const manualAmount = goalData.manual_amount || 0;
-          return { ...goalData, current_amount: accountProgress + manualAmount, account_progress: accountProgress };
+          return { ...goalData, current_amount: accountProgress + manualAmount, account_progress: accountProgress } as DashboardGoal;
         });
         setGoals(processedGoals);
       }
@@ -133,13 +142,7 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
     }
   }, [user]);
 
-  useEffect(() => {
-    loadData();
-    checkOnboarding();
-    checkAdminStatus();
-  }, [user, loadData]);
-
-  const checkAdminStatus = async () => {
+  const checkAdminStatus = useCallback(async () => {
     if (!user) {
       setIsAdmin(false);
       return;
@@ -155,9 +158,9 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
       console.error('Failed to check admin status:', e);
       setIsAdmin(false);
     }
-  };
+  }, [user]);
 
-  const checkOnboarding = async () => {
+  const checkOnboarding = useCallback(async () => {
     if (!user) return;
 
     const { data } = await supabase
@@ -168,7 +171,13 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
 
     const completed = data?.onboarding_completed ?? false;
     setShowOnboarding(!completed);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadData();
+    checkOnboarding();
+    checkAdminStatus();
+  }, [user, loadData, checkOnboarding, checkAdminStatus]);
 
   const deleteAccount = async (accountId: string) => {
     const account = accounts.find(a => a.id === accountId);
@@ -331,7 +340,13 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
                       <GoalTemplates
                         onSelectTemplate={(template) => {
                           setShowGoalTemplates(false);
-                          setGoalFormInitialData(template);
+                          setGoalFormInitialData({
+                            name: template.name,
+                            category: template.category,
+                            targetAmount: template.default_amount,
+                            description: template.description,
+                            priority: 'medium',
+                          });
                           setShowGoalForm(true);
                         }}
                       />
@@ -401,6 +416,7 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
                                 await loadData();
                               } catch (err) {
                                 addToast('Failed to update goal status', 'error');
+                                console.error('Failed to toggle goal completion:', err);
                               }
                             }}
                             onSuccess={loadData}
@@ -446,7 +462,13 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
                   <GoalTemplates
                     onSelectTemplate={(template) => {
                       setShowGoalTemplates(false);
-                      setGoalFormInitialData(template);
+                      setGoalFormInitialData({
+                        name: template.name,
+                        category: template.category,
+                        targetAmount: template.default_amount,
+                        description: template.description,
+                        priority: 'medium',
+                      });
                       setShowGoalForm(true);
                     }}
                   />
@@ -494,6 +516,7 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
                               await loadData();
                             } catch (err) {
                               addToast('Failed to update goal status', 'error');
+                              console.error('Failed to toggle goal completion:', err);
                             }
                           }}
                           onDelete={() => deleteGoal(goal.id)}
@@ -671,7 +694,7 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
               setEditGoal(null);
             }}
             onSuccess={loadData}
-            initialData={goalFormInitialData as any || undefined}
+            initialData={goalFormInitialData || undefined}
             editData={editGoal || undefined}
           />
         )}
@@ -701,7 +724,7 @@ export const EnhancedDashboard = ({ onEnterAdmin }: EnhancedDashboardProps = {})
         {showProgressUpdate && selectedGoalForProgress && (
           <ProgressUpdateModal
             goal={selectedGoalForProgress}
-            accountProgress={(selectedGoalForProgress as any).account_progress || 0}
+            accountProgress={selectedGoalForProgress.account_progress || 0}
             onClose={() => {
               setShowProgressUpdate(false);
               setSelectedGoalForProgress(null);

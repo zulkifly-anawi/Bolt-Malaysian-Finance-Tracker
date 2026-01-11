@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Wallet, Target, TrendingUp, Trophy, FileText, ArrowRight, Activity, Users } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
-import { auditService } from '../../../services/auditService';
+import { auditService, type AuditLogEntry } from '../../../services/auditService';
 
 interface DashboardOverviewProps {
   onNavigate: (page: string) => void;
@@ -17,7 +17,7 @@ export const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
     totalUsers: 0,
     activeUsers: 0,
   });
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

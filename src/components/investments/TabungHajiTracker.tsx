@@ -16,7 +16,7 @@ interface TabungHajiTrackerProps {
 
 export const TabungHajiTracker = ({ account }: TabungHajiTrackerProps) => {
   const [numPeople, setNumPeople] = useState(1);
-  const [projection, setProjection] = useState<any>(null);
+  const [projection, setProjection] = useState<ReturnType<typeof calculateTabungHajiProjection> | null>(null);
   const thHistoryKey = `th.historyExpanded:${account.id}`;
   const [historyExpanded, setHistoryExpanded] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;

@@ -81,16 +81,18 @@ export const FeedbackForm = () => {
         <div>
           <label className="block text-sm font-semibold text-white mb-2">Feedback Type</label>
           <div className="grid grid-cols-2 gap-3">
-            {[
-              { value: 'bug', label: 'Bug Report', emoji: '🐛' },
-              { value: 'feature_request', label: 'Feature Request', emoji: '💡' },
-              { value: 'general', label: 'General Feedback', emoji: '💬' },
-              { value: 'other', label: 'Other', emoji: '📝' },
-            ].map(({ value, label, emoji }) => (
+            {(
+              [
+                { value: 'bug', label: 'Bug Report', emoji: '🐛' },
+                { value: 'feature_request', label: 'Feature Request', emoji: '💡' },
+                { value: 'general', label: 'General Feedback', emoji: '💬' },
+                { value: 'other', label: 'Other', emoji: '📝' },
+              ] as const
+            ).map(({ value, label, emoji }) => (
               <button
                 key={value}
                 type="button"
-                onClick={() => setFeedbackType(value as any)}
+                onClick={() => setFeedbackType(value)}
                 className={`p-3 rounded-xl text-left transition-all ${
                   feedbackType === value
                     ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg'

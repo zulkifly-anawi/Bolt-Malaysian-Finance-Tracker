@@ -89,7 +89,7 @@ export interface Notification {
   message: string;
   is_read: boolean;
   action_url: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
 }
 
@@ -101,7 +101,7 @@ export interface Achievement {
   achievement_description: string | null;
   icon: string | null;
   earned_at: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
 }
 

@@ -68,17 +68,15 @@ export const GoalForm = ({ onClose, onSuccess, initialData, editData }: GoalForm
 
           if (links && links.length > 0) {
             const mappedAccounts: SelectedAccount[] = links
-                .filter((link): link is typeof link & { 
-                  accounts: { id: string; name: string; current_balance: number } 
-                } => 
-                  link.accounts !== null
-                )
-              .map(link => ({
+              .filter((link): link is typeof link & { accounts: { id: string; name: string; current_balance: number } } => 
+                link.accounts !== null && !Array.isArray(link.accounts)
+              )
+              .map((link) => ({
                 accountId: link.account_id,
-                  accountName: (link.accounts as any).name,
-                  currentBalance: (link.accounts as any).current_balance,
-                allocationPercentage: link.allocation_percentage,
-                  estimatedContribution: ((link.accounts as any).current_balance * link.allocation_percentage) / 100,
+                accountName: link.accounts.name,
+                currentBalance: link.accounts.current_balance,
+                allocationPercentage: link.allocation_percentage ?? 0,
+                estimatedContribution: ((link.accounts.current_balance) * (link.allocation_percentage ?? 0)) / 100,
               }));
 
             setSelectedAccounts(mappedAccounts);

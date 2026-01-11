@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Wallet, AlertCircle, Info } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,6 +8,8 @@ import { validateAccountData, validateAge, validateSalary } from '../../utils/va
 import { EPFContributionSection } from './EPFContributionSection';
 import type { Account, EPFSavingsType, EPFDividendRateMethod } from '../../types/database';
 import { useAccountTypes, useInstitutions } from '../../hooks/useConfig';
+
+type AccountPayload = Partial<Account> & Record<string, unknown>;
 
 interface AccountFormProps {
   onClose: () => void;
@@ -70,11 +72,7 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
     }
   }, [formData.currentBalance, formData.accountType]);
 
-  useEffect(() => {
-    loadUserProfile();
-  }, [user]);
-
-  const loadUserProfile = async () => {
+  const loadUserProfile = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from('profiles')
@@ -90,7 +88,11 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
         setFormData(prev => ({ ...prev, age: data.age || 0 }));
       }
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadUserProfile();
+  }, [loadUserProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,7 +148,7 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
         }
       }
 
-      const updateData: any = {
+      const updateData: AccountPayload = {
         name: formData.name,
         account_type: formData.accountType,
         institution: formData.institution || null,
@@ -199,7 +201,7 @@ export const AccountForm = ({ onClose, onSuccess, editData }: AccountFormProps) 
           }
         }
       } else {
-        const insertData: any = {
+        const insertData: AccountPayload = {
           user_id: user.id,
           ...updateData,
         };

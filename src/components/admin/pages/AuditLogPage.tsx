@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Download, Filter, Calendar, User, FileText, RefreshCw } from 'lucide-react';
 import { auditService, AuditLogEntry, AuditLogFilter } from '../../../services/auditService';
 
@@ -14,12 +14,7 @@ export const AuditLogPage = () => {
 
   const itemsPerPage = 50;
 
-  useEffect(() => {
-    loadLogs();
-    loadRetentionWarnings();
-  }, [currentPage, filters]);
-
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     setLoading(true);
     try {
       const offset = (currentPage - 1) * itemsPerPage;
@@ -34,16 +29,21 @@ export const AuditLogPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, filters]);
 
-  const loadRetentionWarnings = async () => {
+  const loadRetentionWarnings = useCallback(async () => {
     try {
       const warnings = await auditService.getRetentionWarnings();
       setRetentionWarnings(warnings);
     } catch (error) {
       console.error('Failed to load retention warnings:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadLogs();
+    loadRetentionWarnings();
+  }, [loadLogs, loadRetentionWarnings]);
 
   const handleExport = async (format: 'json' | 'csv') => {
     setExporting(true);

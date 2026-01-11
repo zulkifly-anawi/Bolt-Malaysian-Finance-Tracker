@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Shield, Plane, Compass, GraduationCap, Calculator, Heart, Car, Plus, Target } from 'lucide-react';
+import { Home, Shield, Plane, Compass, GraduationCap, Calculator, Heart, Car, Plus, Target, LucideIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -16,7 +16,7 @@ interface GoalTemplatesProps {
   onSelectTemplate: (template: GoalTemplate) => void;
 }
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, LucideIcon> = {
   'home': Home,
   'shield': Shield,
   'plane': Plane,

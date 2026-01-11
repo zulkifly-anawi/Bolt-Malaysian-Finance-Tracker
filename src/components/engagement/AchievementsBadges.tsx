@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Trophy, Award, Medal, Target, Briefcase, Heart, Compass, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,23 +22,33 @@ interface AchievementsBadgesProps {
   goals: Goal[];
 }
 
+interface AchievementCheck {
+  type: string;
+  name: string;
+  description: string;
+  icon: string;
+  earned: boolean;
+  progress?: number;
+  target?: number;
+}
+
 export const AchievementsBadges = ({ netWorth, accounts, goals }: AchievementsBadgesProps) => {
   const { user } = useAuth();
-  const [achievements, setAchievements] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<AchievementCheck[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadAchievements();
-  }, [user, netWorth, accounts, goals]);
-
-  const loadAchievements = async () => {
+  const loadAchievements = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
     const achievementChecks = await checkAchievements(user.id, netWorth, accounts, goals);
     setAchievements(achievementChecks);
     setLoading(false);
-  };
+  }, [user, netWorth, accounts, goals]);
+
+  useEffect(() => {
+    loadAchievements();
+  }, [loadAchievements]);
 
   const earnedCount = achievements.filter(a => a.earned).length;
   const totalCount = achievements.length;
