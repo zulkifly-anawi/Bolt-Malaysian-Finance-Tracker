@@ -36,7 +36,7 @@ export const Dashboard = () => {
           let currentAmount = 0;
           if (linkedAccounts) {
             for (const link of linkedAccounts) {
-              const account = accountsData.data?.find((a: any) => a.id === link.account_id);
+              const account = accountsData.data?.find((a: Account) => a.id === link.account_id);
               if (account) {
                 const percentage = link.allocation_percentage || 100;
                 currentAmount += (account.current_balance * percentage) / 100;

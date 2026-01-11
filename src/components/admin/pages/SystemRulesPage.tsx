@@ -18,7 +18,7 @@ interface ValidationRule {
   rule_name: string;
   field_name: string;
   rule_type: string;
-  rule_value: any;
+  rule_value: Record<string, unknown>;
   error_message: string;
   is_active: boolean;
 }
@@ -83,7 +83,7 @@ export const SystemRulesPage = () => {
     }
   };
 
-  const handleUpdateRule = async (rule: ValidationRule, newValue: any, newErrorMessage: string) => {
+  const handleUpdateRule = async (rule: ValidationRule, newValue: Record<string, unknown>, newErrorMessage: string) => {
     setError('');
     try {
       const { error: updateError } = await supabase
@@ -373,7 +373,7 @@ const ValidationRuleItem = ({
   isEditing: boolean;
   onEdit: () => void;
   onCancel: () => void;
-  onSave: (value: any, errorMessage: string) => void;
+  onSave: (value: Record<string, unknown>, errorMessage: string) => void;
   onToggleActive: () => void;
 }) => {
   const [editValue, setEditValue] = useState(JSON.stringify(rule.rule_value, null, 2));
@@ -390,6 +390,7 @@ const ValidationRuleItem = ({
       onSave(parsedValue, editErrorMessage);
     } catch (err) {
       alert('Invalid JSON format');
+      console.error('Failed to parse validation rule JSON:', err);
     }
   };
 

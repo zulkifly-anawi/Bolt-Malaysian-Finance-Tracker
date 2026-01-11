@@ -43,7 +43,7 @@ export interface ValidationRule {
   rule_name: string;
   field_name: string;
   rule_type: string;
-  rule_value: Record<string, any>;
+  rule_value: Record<string, unknown>;
   error_message: string;
   is_active: boolean;
 }

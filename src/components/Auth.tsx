@@ -1,7 +1,20 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-export const LoginPage = ({ onSwitchToSignup, onSwitchToReset }: any) => {
+interface LoginPageProps {
+  onSwitchToSignup: () => void;
+  onSwitchToReset: () => void;
+}
+
+interface SignupPageProps {
+  onSwitchToLogin: () => void;
+}
+
+interface ResetPasswordPageProps {
+  onBack: () => void;
+}
+
+export const LoginPage = ({ onSwitchToSignup, onSwitchToReset }: LoginPageProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -68,7 +81,7 @@ export const LoginPage = ({ onSwitchToSignup, onSwitchToReset }: any) => {
   );
 };
 
-export const SignupPage = ({ onSwitchToLogin }: any) => {
+export const SignupPage = ({ onSwitchToLogin }: SignupPageProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -182,7 +195,7 @@ export const SignupPage = ({ onSwitchToLogin }: any) => {
   );
 };
 
-export const ResetPasswordPage = ({ onBack }: any) => {
+export const ResetPasswordPage = ({ onBack }: ResetPasswordPageProps) => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);

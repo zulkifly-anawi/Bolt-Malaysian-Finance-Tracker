@@ -80,7 +80,10 @@ export const GoalProjection = ({
     goal.created_at
   );
 
-  const bestAccount = recommendBestAccount(accounts as any, goal.category || 'Other');
+  const bestAccount = recommendBestAccount(
+    accounts.map((account) => ({ type: account.account_type || 'Savings', current_balance: account.current_balance })),
+    goal.category || 'Other'
+  );
   const monthsRemaining = calculateMonthsRemaining(goal.target_date);
   const remaining = goal.target_amount - goal.current_amount;
 

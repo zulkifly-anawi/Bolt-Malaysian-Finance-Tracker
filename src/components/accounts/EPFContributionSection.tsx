@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Info, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -23,6 +23,13 @@ interface EPFContributionSectionProps {
   };
 }
 
+interface ContributionPreset {
+  name: string;
+  description: string;
+  employeePercentage: number;
+  employerPercentage: number;
+}
+
 export const EPFContributionSection = ({
   monthlySalary,
   onContributionChange,
@@ -39,9 +46,25 @@ export const EPFContributionSection = ({
   const [showPresets, setShowPresets] = useState(false);
   const [warnings, setWarnings] = useState<string[]>([]);
 
+  const loadProfileDefaults = useCallback(async () => {
+    if (!user || initialData) return;
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('epf_employee_contribution_percentage, epf_employer_contribution_percentage, include_employer_contribution')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (data) {
+      setEmployeePercentage(data.epf_employee_contribution_percentage || 11);
+      setEmployerPercentage(data.epf_employer_contribution_percentage || 12);
+      setUseTotal(data.include_employer_contribution ?? true);
+    }
+  }, [initialData, user]);
+
   useEffect(() => {
     loadProfileDefaults();
-  }, [user]);
+  }, [loadProfileDefaults]);
 
   useEffect(() => {
     if (contributionMode === 'auto') {
@@ -60,25 +83,9 @@ export const EPFContributionSection = ({
         manualAmount,
       });
     }
-  }, [contributionMode, employeePercentage, employerPercentage, useTotal, manualAmount]);
+  }, [contributionMode, employeePercentage, employerPercentage, useTotal, manualAmount, onContributionChange]);
 
-  const loadProfileDefaults = async () => {
-    if (!user || initialData) return;
-
-    const { data } = await supabase
-      .from('profiles')
-      .select('epf_employee_contribution_percentage, epf_employer_contribution_percentage, include_employer_contribution')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (data) {
-      setEmployeePercentage(data.epf_employee_contribution_percentage || 11);
-      setEmployerPercentage(data.epf_employer_contribution_percentage || 12);
-      setUseTotal(data.include_employer_contribution ?? true);
-    }
-  };
-
-  const applyPreset = (preset: any) => {
+  const applyPreset = (preset: ContributionPreset) => {
     setEmployeePercentage(preset.employeePercentage);
     setEmployerPercentage(preset.employerPercentage);
     setShowPresets(false);

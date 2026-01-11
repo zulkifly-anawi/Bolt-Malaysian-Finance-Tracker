@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, BellOff, CheckCircle, AlertCircle, TrendingUp, Calendar, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,12 +22,53 @@ export const NotificationsPanel = () => {
   const [alignLeft, setAlignLeft] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
+  const loadNotifications = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+
+    const { data } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (data) {
+      setNotifications(data);
+    }
+    setLoading(false);
+  }, [user]);
+
+  const setupRealtimeSubscription = useCallback(() => {
+    if (!user) return;
+
+    const subscription = supabase
+      .channel('notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          setNotifications(prev => [payload.new as Notification, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       loadNotifications();
       setupRealtimeSubscription();
     }
-  }, [user]);
+  }, [user, loadNotifications, setupRealtimeSubscription]);
 
   useEffect(() => {
     if (showPanel) {
@@ -55,47 +96,6 @@ export const NotificationsPanel = () => {
     } else {
       setAlignLeft(false);
     }
-  };
-
-  const loadNotifications = async () => {
-    if (!user) return;
-    setLoading(true);
-
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    if (data) {
-      setNotifications(data);
-    }
-    setLoading(false);
-  };
-
-  const setupRealtimeSubscription = () => {
-    if (!user) return;
-
-    const subscription = supabase
-      .channel('notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          setNotifications(prev => [payload.new as Notification, ...prev]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
   };
 
   const markAsRead = async (notificationId: string) => {

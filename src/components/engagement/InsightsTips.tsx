@@ -1,26 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Lightbulb, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Target, DollarSign, BookOpen } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency } from '../../utils/formatters';
+import type { Account, Goal } from '../../types/database';
+
+type InsightType = 'success' | 'warning' | 'tip' | 'info';
+type InsightIcon = 'check' | 'trending-up' | 'trending-down' | 'alert' | 'target' | 'lightbulb';
+
+interface Insight {
+  type: InsightType;
+  icon: InsightIcon;
+  title: string;
+  message: string;
+}
+
+interface MonthlySummary {
+  net_worth_change: number;
+  total_contributions: number;
+  goals_on_track: number;
+  goals_behind: number;
+}
 
 interface InsightsTipsProps {
   netWorth: number;
-  accounts: any[];
-  goals: any[];
+  accounts: Account[];
+  goals: Goal[];
 }
 
 export const InsightsTips = ({ netWorth, accounts, goals }: InsightsTipsProps) => {
   const { user } = useAuth();
-  const [monthlySummary, setMonthlySummary] = useState<any>(null);
-  const [insights, setInsights] = useState<any[]>([]);
+  const [monthlySummary, setMonthlySummary] = useState<MonthlySummary | null>(null);
+  const [insights, setInsights] = useState<Insight[]>([]);
 
-  useEffect(() => {
-    generateInsights();
-    loadMonthlySummary();
-  }, [netWorth, accounts, goals]);
-
-  const loadMonthlySummary = async () => {
+  const loadMonthlySummary = useCallback(async () => {
     if (!user) return;
 
     const now = new Date();
@@ -35,10 +48,10 @@ export const InsightsTips = ({ netWorth, accounts, goals }: InsightsTipsProps) =
     if (data) {
       setMonthlySummary(data);
     }
-  };
+  }, [user]);
 
-  const generateInsights = () => {
-    const newInsights: any[] = [];
+  const generateInsights = useCallback(() => {
+    const newInsights: Insight[] = [];
 
     const goalsOnTrack = goals.filter(g => !g.is_achieved && g.current_amount >= g.target_amount * 0.5);
     const goalsBehind = goals.filter(g => !g.is_achieved && g.current_amount < g.target_amount * 0.3);
@@ -160,9 +173,14 @@ export const InsightsTips = ({ netWorth, accounts, goals }: InsightsTipsProps) =
     }
 
     setInsights(newInsights);
-  };
+  }, [netWorth, accounts, goals]);
 
-  const getIconComponent = (icon: string) => {
+  useEffect(() => {
+    generateInsights();
+    loadMonthlySummary();
+  }, [generateInsights, loadMonthlySummary]);
+
+  const getIconComponent = (icon: InsightIcon) => {
     switch (icon) {
       case 'check':
         return CheckCircle;
@@ -181,7 +199,7 @@ export const InsightsTips = ({ netWorth, accounts, goals }: InsightsTipsProps) =
     }
   };
 
-  const getInsightStyles = (type: string) => {
+  const getInsightStyles = (type: InsightType) => {
     switch (type) {
       case 'success':
         return {

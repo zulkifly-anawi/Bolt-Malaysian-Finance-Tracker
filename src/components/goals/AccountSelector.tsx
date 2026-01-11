@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -25,29 +25,30 @@ export const AccountSelector = ({ selectedAccounts, onSelectionChange, disabled 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    loadAccounts();
+  const loadAccounts = useCallback(async () => {
+    if (!user?.id) return;
+    const { data, error } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading accounts:', error);
+      return;
+    }
+
+    setAccounts(data || []);
   }, [user]);
 
-  const loadAccounts = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('name');
-
-      if (error) throw error;
-      setAccounts(data || []);
-    } catch (err) {
-      console.error('Failed to load accounts:', err);
-    } finally {
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      await loadAccounts();
       setLoading(false);
-    }
-  };
+    };
+    load();
+  }, [loadAccounts]);
 
   const filteredAccounts = accounts.filter(acc =>
     acc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

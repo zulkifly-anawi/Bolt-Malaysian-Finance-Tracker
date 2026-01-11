@@ -75,7 +75,10 @@ export const AccountGoalLinker = ({ goal, onClose, onSuccess }: AccountGoalLinke
         const mapped: LinkedAccount[] = links
           .filter(link => link.accounts !== null)
           .map(link => {
-            const account = link.accounts as { id: string; name: string; current_balance: number };
+            const accountData = Array.isArray(link.accounts) && link.accounts.length > 0 
+              ? link.accounts[0] 
+              : link.accounts;
+            const account = accountData as { id: string; name: string; current_balance: number };
             return {
               accountId: link.account_id,
               accountName: account.name,
